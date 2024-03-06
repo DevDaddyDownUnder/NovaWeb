@@ -2,10 +2,12 @@
 #include <netinet/in.h>
 #include "http_server.h"
 
-void print_welcome();
+int main(void);
+
+void print_welcome(void);
 
 // Entry point.
-int main()
+int main(void)
 {
     // Welcome message
     print_welcome();
@@ -17,7 +19,7 @@ int main()
 }
 
 // Welcome message.
-void print_welcome()
+void print_welcome(void)
 {
     printf("  _   _              __          __  _     \n");
     printf(" | \\ | |             \\ \\        / / | |    \n");

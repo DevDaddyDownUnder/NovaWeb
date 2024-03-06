@@ -8,5 +8,6 @@
 
 void start_http_server(int domain, u_long interface, int port, int backlog);
 void * handle_client(void *client_socket);
+void handle_termination_signal(int signum);
 
 #endif //NOVAWEB_HTTP_SERVER_H

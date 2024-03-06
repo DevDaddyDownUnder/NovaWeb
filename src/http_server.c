@@ -10,6 +10,9 @@
 
 #define BUFFER_SIZE 1024
 
+// Prevent the compiler from optimising this variable away
+volatile sig_atomic_t stop_server = 0;
+
 // Main logic to set up the socket and listen for new connections.
 void start_http_server(int domain, u_long interface, int port, int backlog)
 {
@@ -50,9 +53,36 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
     // User feedback
     printf("NovaWeb HTTP Server listening on: %d\n", port);
 
+    // Set up signal handler for termination signals
+    signal(SIGINT, handle_termination_signal);
+    signal(SIGTERM, handle_termination_signal);
+
+    // Set up timeout for select()
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+    int ready;
+
     // Main server loop
-    while (1)
+    while (!stop_server)
     {
+        // Set up file descriptor set for select() with server socket
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(server_socket, &readfds);
+
+        // Wait for incoming connection with timeout
+        ready = select(server_socket + 1, &readfds, NULL, NULL, &timeout);
+        if (ready < 0)
+        {
+            break;
+        }
+        else if (ready == 0)
+        {
+            // Timeout reached, check for termination signals
+            continue;
+        }
+
         // Accept incoming connection
         client_socket = accept(server_socket, (struct sockaddr *) &client_addr, &client_addr_len);
         if (client_socket < 0)
@@ -77,6 +107,9 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
             continue;
         }
     }
+
+    // Gracefully shut down the server
+    printf("Shutting down server...\n");
 
     // Close server socket
     close(server_socket);
@@ -120,4 +153,13 @@ void *handle_client(void *arg)
     // Close file and client socket
     close(client_socket);
     pthread_exit(NULL);
+}
+
+// Signal handler for termination signals
+void handle_termination_signal(int signum)
+{
+    // Reset signal handler
+    signal(signum, SIG_DFL);
+
+    stop_server = 1;
 }
