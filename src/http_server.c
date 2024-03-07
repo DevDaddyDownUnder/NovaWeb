@@ -31,6 +31,14 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
         exit(EXIT_FAILURE);
     }
 
+    // Enable the SO_REUSEADDR option
+    int enable = 1;
+    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+    {
+        printf("Error setting socket to reuse address.\n");
+        exit(EXIT_FAILURE);
+    }
+
     // Initialize server address struct
     server_addr.sin_family = domain;
     server_addr.sin_addr.s_addr = interface;
@@ -51,7 +59,7 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
     }
 
     // User feedback
-    printf("NovaWeb HTTP Server listening on: %d\n", port);
+    printf("NovaWeb HTTP Server listening on: %d\n\n", port);
 
     // Set up signal handler for termination signals
     signal(SIGINT, handle_termination_signal);
