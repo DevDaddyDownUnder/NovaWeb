@@ -18,6 +18,12 @@ NovaWeb has a default port of 8080 and will serve files from the directory it's 
 NovaWeb
 ```
 
+Start NovaWeb on a specified port:
+
+```bash
+NovaWeb -p 8081
+```
+
 
 ## Compiling
 
