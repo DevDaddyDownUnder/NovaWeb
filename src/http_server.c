@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "http_server.h"
+#include "request.h"
 
 #define BUFFER_SIZE 1024
 
@@ -144,6 +145,14 @@ void *handle_client(void *arg)
         close(client_socket);
         pthread_exit(NULL);
     }
+
+    http_request request;
+    // Initialize request content to empty values
+    memset(&request, 0, sizeof(http_request));
+    // Parse request
+    parse_request(buffer, &request);
+    // Debug the request
+    print_request(request);
 
     // Send HTTP response headers
     char response_headers[BUFFER_SIZE];
