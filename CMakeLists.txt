@@ -4,4 +4,6 @@ project(NovaWeb C)
 set(CMAKE_C_STANDARD 11)
 
 add_executable(NovaWeb src/main.c
-        src/http_server.c)
+        src/http_server.c
+        src/request.c
+        src/response.c)

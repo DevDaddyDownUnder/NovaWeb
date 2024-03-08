@@ -7,7 +7,9 @@ CFLAGS = -Wall -Wextra -pedantic -std=c11
 # Source files
 SRCS = \
 	src/main.c \
-	src/http_server.c
+	src/http_server.c \
+	src/request.c \
+	src/response.c
 
 # Object files
 OBJS = $(patsubst src/%.c, build/%.o, $(SRCS))
@@ -28,7 +30,7 @@ build/%.o: src/%.c | build
 
 # Install the binary
 install:
-	cp $(TARGET) /usr/local/bin
+	cp $(TARGET) /usr/local/bin/novaweb
 
 # Clean target to remove object files and executable
 clean:
