@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include "http_server.h"
 #include "request.h"
+#include "response.h"
 
 #define BUFFER_SIZE 1024
 
@@ -138,7 +139,8 @@ void *handle_client(void *arg)
         printf("Error receiving data from client.\n");
         close(client_socket);
         pthread_exit(NULL);
-    } else if (bytes_received == 0)
+    }
+    else if (bytes_received == 0)
     {
         // Client closed the connection
         printf("Client closed the connection.\n");
@@ -146,21 +148,31 @@ void *handle_client(void *arg)
         pthread_exit(NULL);
     }
 
+    // Build request
     http_request request;
-    // Initialize request content to empty values
     memset(&request, 0, sizeof(http_request));
-    // Parse request
     parse_request(buffer, &request);
-    // Debug the request
+    // TODO use debug flag to conditionally print request
     print_request(request);
 
-    // Send HTTP response headers
-    char response_headers[BUFFER_SIZE];
-    snprintf(response_headers, BUFFER_SIZE, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Hello World!</h1></body></html>");
+    // Build response
+    http_response response;
+    memset(&response, 0, sizeof(http_response));
+    response.status_code = 200;
+    strcpy(response.status_message, "OK");
+    strcpy(response.body, "<html><body><h1>Hello World!</h1></body></html>");
+    add_header(&response, "Content-Type", "text/html");
+    add_header(&response, "Server", "NovaWeb/0.1");
 
-    unsigned long headers_length = strlen(response_headers);
-    ssize_t bytes_sent = send(client_socket, response_headers, headers_length, 0);
-    if (bytes_sent < headers_length)
+    char output[MAX_RESPONSE_SIZE];
+    build_http_response(&response, output);
+    // TODO use debug flag to conditionally print response
+    print_response(response);
+
+    // Send the response
+    unsigned long response_length = strlen(output);
+    ssize_t bytes_sent = send(client_socket, output, response_length, 0);
+    if (bytes_sent < response_length)
     {
         printf("Error sending response headers.\n");
         close(client_socket);
