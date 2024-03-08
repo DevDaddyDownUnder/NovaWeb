@@ -129,7 +129,7 @@ void *handle_client(void *arg)
 {
     int client_socket = *((int *) arg);
     char buffer[BUFFER_SIZE];
-    int bytes_received;
+    ssize_t bytes_received;
 
     // Receive data from client
     bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
@@ -158,8 +158,8 @@ void *handle_client(void *arg)
     char response_headers[BUFFER_SIZE];
     snprintf(response_headers, BUFFER_SIZE, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Hello World!</h1></body></html>");
 
-    int headers_length = strlen(response_headers);
-    int bytes_sent = send(client_socket, response_headers, headers_length, 0);
+    unsigned long headers_length = strlen(response_headers);
+    ssize_t bytes_sent = send(client_socket, response_headers, headers_length, 0);
     if (bytes_sent < headers_length)
     {
         printf("Error sending response headers.\n");
