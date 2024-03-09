@@ -11,6 +11,6 @@ typedef struct {
 } host_config;
 
 void add_host_config(char *host, char *document_root);
-char *get_document_root(char host[MAX_HOST_SIZE]);
+void get_document_root(char host[MAX_HOST_SIZE], char *buffer, size_t buffer_size);
 
 #endif //NOVAWEB_VIRTUAL_HOST_H
