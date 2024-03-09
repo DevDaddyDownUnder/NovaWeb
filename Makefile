@@ -9,7 +9,10 @@ SRCS = \
 	src/main.c \
 	src/http_server.c \
 	src/request.c \
-	src/response.c
+	src/response.c \
+	src/path.c \
+	src/virtual_host.c \
+	src/file.c
 
 # Object files
 OBJS = $(patsubst src/%.c, build/%.o, $(SRCS))

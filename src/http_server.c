@@ -7,8 +7,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "http_server.h"
+#include "file.h"
+#include "path.h"
 #include "request.h"
-#include "response.h"
+#include "virtual_host.h"
 
 #define BUFFER_SIZE 1024
 
@@ -29,7 +31,7 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket < 0)
     {
-        printf("Error creating socket.\n");
+        perror("Error creating socket.");
         exit(EXIT_FAILURE);
     }
 
@@ -37,7 +39,7 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
     int enable = 1;
     if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
     {
-        printf("Error setting socket to reuse address.\n");
+        perror("Error setting socket to reuse address.");
         exit(EXIT_FAILURE);
     }
 
@@ -49,14 +51,14 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
     // Bind socket to address
     if (bind(server_socket, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0)
     {
-        printf("Error binding socket.\n");
+        perror("Error binding socket.");
         exit(EXIT_FAILURE);
     }
 
     // Listen for incoming connections
     if (listen(server_socket, backlog) < 0)
     {
-        printf("Error listening for connections.\n");
+        perror("Error listening for connections.");
         exit(EXIT_FAILURE);
     }
 
@@ -97,14 +99,14 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
         client_socket = accept(server_socket, (struct sockaddr *) &client_addr, &client_addr_len);
         if (client_socket < 0)
         {
-            printf("Error accepting connection.\n");
+            perror("Error accepting connection.");
             continue;
         }
 
         // Create a new thread to handle the client connection
         if (pthread_create(&thread_id, NULL, handle_client, (void *) &client_socket) != 0)
         {
-            printf("Error creating thread.\n");
+            perror("Error creating thread.");
             close(client_socket);
             continue;
         }
@@ -112,7 +114,7 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
         // Detach the thread to allow it to run independently
         if (pthread_detach(thread_id) != 0)
         {
-            printf("Error detaching thread.\n");
+            perror("Error detaching thread.");
             close(client_socket);
             continue;
         }
@@ -136,14 +138,14 @@ void *handle_client(void *arg)
     bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
     if (bytes_received < 0)
     {
-        printf("Error receiving data from client.\n");
+        perror("Error receiving data from client.");
         close(client_socket);
         pthread_exit(NULL);
     }
     else if (bytes_received == 0)
     {
         // Client closed the connection
-        printf("Client closed the connection.\n");
+        perror("Client closed the connection.");
         close(client_socket);
         pthread_exit(NULL);
     }
@@ -155,29 +157,31 @@ void *handle_client(void *arg)
     // TODO use debug flag to conditionally print request
     print_request(request);
 
-    // Build response
-    http_response response;
-    memset(&response, 0, sizeof(http_response));
-    response.status_code = 200;
-    strcpy(response.status_message, "OK");
-    strcpy(response.body, "<html><body><h1>Hello World!</h1></body></html>");
-    add_header(&response, "Content-Type", "text/html");
-    add_header(&response, "Server", "NovaWeb/0.1");
-
-    char output[MAX_RESPONSE_SIZE];
-    build_http_response(&response, output);
-    // TODO use debug flag to conditionally print response
-    print_response(response);
-
-    // Send the response
-    unsigned long response_length = strlen(output);
-    ssize_t bytes_sent = send(client_socket, output, response_length, 0);
-    if (bytes_sent < response_length)
+    // Extract requested file
+    int built_path = build_file_path(request.uri);
+    if (built_path == 0)
     {
-        printf("Error sending response headers.\n");
+        // TODO send a 400?
+        perror("Error building file path.");
         close(client_socket);
         pthread_exit(NULL);
     }
+
+    // Build absolute file path based on document root
+    char file_path[BUFFER_SIZE];
+    char host[BUFFER_SIZE];
+    get_header_value(&request, "Host", host, sizeof(host));
+
+    char document_root[BUFFER_SIZE];
+    get_document_root(host, document_root, sizeof(document_root));
+    snprintf(file_path, sizeof(file_path), "%s/%s", document_root, request.uri);
+
+    // TODO use debug flag to conditionally print
+    printf("Requested file: %s\n", request.uri);
+    printf("File path: %s\n\n", file_path);
+
+    // Send the requested file
+    send_file(client_socket, file_path);
 
     // Close file and client socket
     close(client_socket);
