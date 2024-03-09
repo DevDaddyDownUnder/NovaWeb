@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "http_server.h"
+#include "virtual_host.h"
 
 int main(int argc, char *argv[]);
 
@@ -13,16 +14,18 @@ int main(int argc, char *argv[])
 {
     int opt;
     int port = DEFAULT_PORT;
+    char *host = NULL;
+    char *document_root = NULL;
 
     // Parse options
-    while ((opt = getopt(argc, argv, "p:")) != -1)
+    while ((opt = getopt(argc, argv, "p:h:d:")) != -1)
     {
         switch (opt)
         {
             case 'p':
             {
                 char *endptr;
-                long int port_long = strtol(optarg, &endptr, 10);
+                long port_long = strtol(optarg, &endptr, 10);
 
                 // Check the port is in bounds
                 if (endptr == optarg || *endptr != '\0' || port_long < 0 || port_long > 65535)
@@ -34,6 +37,12 @@ int main(int argc, char *argv[])
                 port = (int) port_long;
                 break;
             }
+            case 'h':
+                host = optarg;
+                break;
+            case 'd':
+                document_root = optarg;
+                break;
             case '?':
             {
                 // Invalid option or missing argument
@@ -47,9 +56,28 @@ int main(int argc, char *argv[])
                 return 1;
             }
             default:
-                fprintf(stderr, "Usage: %s [-p <port>]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-p <port>] [-h <host>] [-d <document root>\n", argv[0]);
                 return 1;
         }
+    }
+
+    // Add virtual host configuration
+    if (document_root != NULL)
+    {
+        char host_buffer[MAX_HOST_SIZE];
+
+        // Default the host if not provided
+        if (host == NULL)
+        {
+            snprintf(host_buffer, sizeof(host_buffer), "%s:%d", "127.0.0.1", port);
+        }
+        else
+        {
+            snprintf(host_buffer, sizeof(host_buffer), "%s:%d", host, port);
+        }
+
+        host = host_buffer;
+        add_host_config(host, document_root);
     }
 
     // Welcome message
