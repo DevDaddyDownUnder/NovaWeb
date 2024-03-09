@@ -6,6 +6,8 @@
 #include "file.h"
 #include "path.h"
 #include "response.h"
+#include "http_status.h"
+#include "mime_types.h"
 
 // Read the files contents and send it to the client
 void send_file_contents(int client_socket, FILE *file_ptr)
@@ -71,17 +73,26 @@ void send_file(int client_socket, char *file_path)
         pthread_exit(NULL);
     }
     off_t file_size = st.st_size;
-
     char file_size_buffer[MAX_HEADER_VALUE_LENGTH];
     snprintf(file_size_buffer, sizeof(file_size_buffer), "%lld", file_size);
 
     // Build response
     http_response response;
     memset(&response, 0, sizeof(http_response));
-    response.status_code = 200;
-    strcpy(response.status_message, "OK");
-    add_header(&response, "Content-Type", "text/html");
+    response.status_code = OK;
+    get_status_message(response.status_code, response.status_message, sizeof(response.status_message));
+
+    // Get mime type of the file
+    char mime_type[MAX_MIME_TYPE_SIZE];
+    get_mime_type(file_path ,mime_type, sizeof(mime_type));
+    add_header(&response, "Content-Type", mime_type);
+
+    // Add content length header
     add_header(&response, "Content-Length", file_size_buffer);
+
+    // TODO add a flag to toggle adding this header or not
+    // TODO define NovaWeb label and version somewhere
+    // Add server header
     add_header(&response, "Server", "NovaWeb/0.1");
 
     char output[MAX_RESPONSE_SIZE];

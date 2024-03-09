@@ -9,4 +9,6 @@ add_executable(NovaWeb src/main.c
         src/response.c
         src/path.c
         src/virtual_host.c
-        src/file.c)
+        src/file.c
+        src/mime_types.c
+        src/http_status.c)
