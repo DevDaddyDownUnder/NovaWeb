@@ -6,14 +6,19 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <errno.h>
 #include "http_server.h"
 #include "file.h"
 #include "path.h"
 #include "request.h"
 #include "virtual_host.h"
 #include "config.h"
+#include "directory.h"
+#include "url.h"
 
 #define BUFFER_SIZE 1024
+#define RECEIVE_TIMEOUT_SECONDS 10
 
 // Prevent the compiler from optimising this variable away
 volatile sig_atomic_t stop_server = 0;
@@ -66,7 +71,7 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
     // User feedback
     printf("NovaWeb HTTP Server listening on: %d\n\n", port);
 
-    // Set up signal handler for termination signals
+    // Set up signal handlers
     signal(SIGINT, handle_termination_signal);
     signal(SIGTERM, handle_termination_signal);
 
@@ -135,25 +140,35 @@ void *handle_client(void *arg)
     char buffer[BUFFER_SIZE];
     ssize_t bytes_received;
 
+    // Set timeout for receive
+    struct timeval tv;
+    tv.tv_sec = RECEIVE_TIMEOUT_SECONDS;
+    tv.tv_usec = 0;
+    setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
     // Receive data from client
     bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
     if (bytes_received < 0)
     {
-        perror("Error receiving data from client");
+        // Bad file descriptor is occurring with JMeter spam sometimes
+        if (errno != EBADF)
+        {
+            perror("Error receiving data from client");
+        }
+
         close(client_socket);
         pthread_exit(NULL);
     }
     else if (bytes_received == 0)
     {
         // Client closed the connection
-        perror("Client closed the connection");
         close(client_socket);
         pthread_exit(NULL);
     }
 
-    // Build request
+    // Parse request
     http_request request;
-    memset(&request, 0, sizeof(http_request));
+//    memset(&request, 0, sizeof(http_request));
     parse_request(buffer, &request);
     if (verbose_flag)
     {
@@ -171,13 +186,37 @@ void *handle_client(void *arg)
     }
 
     // Build absolute file path based on document root
-    char file_path[BUFFER_SIZE];
     char host[BUFFER_SIZE];
     get_header_value(&request, "Host", host, sizeof(host));
 
+    // Get document root
+    char file_path[BUFFER_SIZE];
     char document_root[BUFFER_SIZE];
     get_document_root(host, document_root, sizeof(document_root));
-    snprintf(file_path, sizeof(file_path), "%s/%s", document_root, request.uri);
+    if (strcmp(request.uri, "/") == 0)
+    {
+        snprintf(file_path, sizeof(file_path), "%s", document_root);
+    }
+    else
+    {
+        snprintf(file_path, sizeof(file_path), "%s/%s", document_root, request.uri);
+    }
+
+    // Set the default file if it exists
+    if (directory_listing_flag && strchr(file_path, '.') == NULL)
+    {
+        char default_file[BUFFER_SIZE];
+        snprintf(default_file, sizeof(default_file), "%s/%s", file_path, DEFAULT_FILE);
+
+        struct stat st;
+        if (stat(default_file, &st) == 0)
+        {
+            snprintf(file_path, sizeof(file_path), "%s/%s", file_path, DEFAULT_FILE);
+        }
+    }
+
+    // URL decode the file_path, names with special characters and URL encoded
+    url_decode(file_path, file_path, sizeof(file_path));
 
     if (verbose_flag)
     {
@@ -185,8 +224,26 @@ void *handle_client(void *arg)
         printf("File path: %s\n\n", file_path);
     }
 
-    // Send the requested file
-    send_file(client_socket, file_path);
+    // Check if the requested file is a directory
+    struct stat st;
+    if (stat(file_path, &st) != 0)
+    {
+        send_not_found(client_socket);
+        close(client_socket);
+        pthread_exit(NULL);
+    }
+
+    // Send directory list or file
+    if (directory_listing_flag && S_ISDIR(st.st_mode))
+    {
+        // Send directory listing
+        send_directory_listing(client_socket, file_path, document_root);
+    }
+    else
+    {
+        // Send the requested file
+        send_file(client_socket, file_path, st);
+    }
 
     // Close file and client socket
     close(client_socket);
