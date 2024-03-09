@@ -22,5 +22,6 @@ typedef struct {
 void add_header(http_response *response, char *name, char *value);
 void build_http_response(http_response *response, char *output);
 void print_response(http_response request);
+void send_not_found(int client_socket);
 
 #endif //NOVAWEB_RESPONSE_H
