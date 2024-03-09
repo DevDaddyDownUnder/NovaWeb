@@ -5,12 +5,12 @@
 #include <string.h>
 
 #define MAX_MIME_TYPES 80
-#define MAX_EXTENSION_SIZE 10
-#define MAX_MIME_TYPE_SIZE 100
+#define MAX_EXTENSION_LENGTH 10
+#define MAX_MIME_TYPE_LENGTH 100
 
 typedef struct {
-    char extension[MAX_EXTENSION_SIZE];
-    char mime_type[MAX_MIME_TYPE_SIZE];
+    char extension[MAX_EXTENSION_LENGTH];
+    char mime_type[MAX_MIME_TYPE_LENGTH];
 } mime_mapping;
 
 extern mime_mapping mime_types[MAX_MIME_TYPES];
