@@ -1,5 +1,6 @@
 #include <string.h>
 #include "path.h"
+#include "config.h"
 
 void normalize_path(char *path)
 {
@@ -48,7 +49,10 @@ int build_file_path(char *file)
     // If root directory is requested, serve index.html
     if (strcmp(file, "/") == 0)
     {
-        strcpy(file, DEFAULT_FILE);
+        if (!directory_listing_flag)
+        {
+            strcpy(file, DEFAULT_FILE);
+        }
     }
     else
     {
