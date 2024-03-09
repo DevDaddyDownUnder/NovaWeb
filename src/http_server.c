@@ -11,6 +11,7 @@
 #include "path.h"
 #include "request.h"
 #include "virtual_host.h"
+#include "config.h"
 
 #define BUFFER_SIZE 1024
 
@@ -31,7 +32,7 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket < 0)
     {
-        perror("Error creating socket.");
+        perror("Error creating socket");
         exit(EXIT_FAILURE);
     }
 
@@ -39,7 +40,7 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
     int enable = 1;
     if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
     {
-        perror("Error setting socket to reuse address.");
+        perror("Error setting socket to reuse address");
         exit(EXIT_FAILURE);
     }
 
@@ -51,14 +52,14 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
     // Bind socket to address
     if (bind(server_socket, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0)
     {
-        perror("Error binding socket.");
+        perror("Error binding socket");
         exit(EXIT_FAILURE);
     }
 
     // Listen for incoming connections
     if (listen(server_socket, backlog) < 0)
     {
-        perror("Error listening for connections.");
+        perror("Error listening for connections");
         exit(EXIT_FAILURE);
     }
 
@@ -71,7 +72,7 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
 
     // Set up timeout for select()
     struct timeval timeout;
-    timeout.tv_sec = 1;
+    timeout.tv_sec = 1; // TODO work out a good value for this
     timeout.tv_usec = 0;
     int ready;
 
@@ -99,14 +100,14 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
         client_socket = accept(server_socket, (struct sockaddr *) &client_addr, &client_addr_len);
         if (client_socket < 0)
         {
-            perror("Error accepting connection.");
+            perror("Error accepting connection");
             continue;
         }
 
         // Create a new thread to handle the client connection
         if (pthread_create(&thread_id, NULL, handle_client, (void *) &client_socket) != 0)
         {
-            perror("Error creating thread.");
+            perror("Error creating thread");
             close(client_socket);
             continue;
         }
@@ -114,7 +115,7 @@ void start_http_server(int domain, u_long interface, int port, int backlog)
         // Detach the thread to allow it to run independently
         if (pthread_detach(thread_id) != 0)
         {
-            perror("Error detaching thread.");
+            perror("Error detaching thread");
             close(client_socket);
             continue;
         }
@@ -138,14 +139,14 @@ void *handle_client(void *arg)
     bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
     if (bytes_received < 0)
     {
-        perror("Error receiving data from client.");
+        perror("Error receiving data from client");
         close(client_socket);
         pthread_exit(NULL);
     }
     else if (bytes_received == 0)
     {
         // Client closed the connection
-        perror("Client closed the connection.");
+        perror("Client closed the connection");
         close(client_socket);
         pthread_exit(NULL);
     }
@@ -154,15 +155,17 @@ void *handle_client(void *arg)
     http_request request;
     memset(&request, 0, sizeof(http_request));
     parse_request(buffer, &request);
-    // TODO use debug flag to conditionally print request
-    print_request(request);
+    if (verbose_flag)
+    {
+        print_request(request);
+    }
 
     // Extract requested file
     int built_path = build_file_path(request.uri);
     if (built_path == 0)
     {
         // TODO send a 400?
-        perror("Error building file path.");
+        perror("Error building file path");
         close(client_socket);
         pthread_exit(NULL);
     }
@@ -176,9 +179,11 @@ void *handle_client(void *arg)
     get_document_root(host, document_root, sizeof(document_root));
     snprintf(file_path, sizeof(file_path), "%s/%s", document_root, request.uri);
 
-    // TODO use debug flag to conditionally print
-    printf("Requested file: %s\n", request.uri);
-    printf("File path: %s\n\n", file_path);
+    if (verbose_flag)
+    {
+        printf("Requested file: %s\n", request.uri);
+        printf("File path: %s\n\n", file_path);
+    }
 
     // Send the requested file
     send_file(client_socket, file_path);
