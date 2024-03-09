@@ -15,7 +15,9 @@ SRCS = \
 	src/file.c \
 	src/mime_types.c \
 	src/http_status.c \
-	src/config.c
+	src/config.c \
+	src/directory.c \
+	src/url.c
 
 # Object files
 OBJS = $(patsubst src/%.c, build/%.o, $(SRCS))
