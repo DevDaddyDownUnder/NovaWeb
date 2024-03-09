@@ -15,13 +15,13 @@ void add_host_config(char *host, char *document_root)
         return;
     }
 
-    strncpy(hosts[sizeof_hosts].host, host, MAX_HOST_SIZE - 1);
+    strncpy(hosts[sizeof_hosts].host, host, MAX_HOST_LENGTH - 1);
     strncpy(hosts[sizeof_hosts].document_root, document_root, MAX_DOCUMENT_ROOT_LENGTH - 1);
     sizeof_hosts++;
 }
 
 // Return the document root for the specified host.
-void get_document_root(char host[MAX_HOST_SIZE], char *buffer, size_t buffer_size)
+void get_document_root(char host[MAX_HOST_LENGTH], char *buffer, size_t buffer_size)
 {
     for (int i = 0; i < sizeof_hosts; i++)
     {
