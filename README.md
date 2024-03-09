@@ -24,6 +24,20 @@ Start NovaWeb on a specified port:
 NovaWeb -p 8081
 ```
 
+Start NovaWeb with a specified port, host and document root:
+
+```bash
+NovaWeb -p 8081 -h 127.0.0.1 -d /var/www/sites/example
+```
+
+### Options
+
+| Argument | Name          | Description                                                      |
+|----------|:--------------|:-----------------------------------------------------------------|
+| -p       | port          | The port number to bind to. Default value is 8080.               |
+| -h       | host          | The virtual host to route requests to the correct document root. |
+| -d       | document root | The document root of your files to be served.                    |
+
 
 ## Compiling
 
