@@ -32,12 +32,13 @@ NovaWeb -p 8081 -h 127.0.0.1 -d /var/www/sites/example
 
 ### Options
 
-| Argument  | Name          | Description                                                                |
-|-----------|:--------------|:---------------------------------------------------------------------------|
-| -p        | port          | The port number to bind to. Default value is 8080.                         |
-| -h        | host          | The virtual host to route requests to the correct document root.           |
-| -d        | document root | The document root of your files to be served.                              |
-| --verbose | verbose       | The verbose flag enables detailed logging of request and response objects. |
+| Argument  | Name              | Description                                                                      |
+|-----------|:------------------|:---------------------------------------------------------------------------------|
+| -p        | port              | The port number to bind to. Default value is 8080.                               |
+| -h        | host              | The virtual host to route requests to the correct document root.                 |
+| -d        | document root     | The document root of your files to be served.                                    |
+| -dl       | directory listing | The directory listing flag disables directory listing. Default value is enabled. |
+| --verbose | verbose           | The verbose flag enables detailed logging of request and response objects.       |
 
 
 ## Compiling
