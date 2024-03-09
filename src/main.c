@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "http_server.h"
 #include "virtual_host.h"
+#include "config.h"
 
 int main(int argc, char *argv[]);
 
@@ -17,11 +18,30 @@ int main(int argc, char *argv[])
     char *host = NULL;
     char *document_root = NULL;
 
+    const struct option long_options[] = {
+            // Verbose option sets a flag
+            {"verbose", no_argument, &verbose_flag, 1},
+
+            // These options don't set a flag
+            {"port", required_argument, NULL, 'p'},
+            {"host", required_argument, NULL, 'h'},
+            {"document", required_argument, NULL, 'd'},
+            {NULL, 0, NULL, 0}
+    };
+
+    int option_index = 0;
+
     // Parse options
-    while ((opt = getopt(argc, argv, "p:h:d:")) != -1)
+    while ((opt = getopt_long(argc, argv, "p:h:d:", long_options, &option_index)) != -1)
     {
         switch (opt)
         {
+            case 0:
+                if (long_options[option_index].flag != NULL)
+                {
+                    break;
+                }
+                break;
             case 'p':
             {
                 char *endptr;
@@ -56,7 +76,7 @@ int main(int argc, char *argv[])
                 return 1;
             }
             default:
-                fprintf(stderr, "Usage: %s [-p <port>] [-h <host>] [-d <document root>\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-p <port>] [-h <host>] [-d <document root>] [--verbose]\n", argv[0]);
                 return 1;
         }
     }
@@ -64,7 +84,7 @@ int main(int argc, char *argv[])
     // Add virtual host configuration
     if (document_root != NULL)
     {
-        char host_buffer[MAX_HOST_SIZE];
+        char host_buffer[MAX_HOST_LENGTH];
 
         // Default the host if not provided
         if (host == NULL)
