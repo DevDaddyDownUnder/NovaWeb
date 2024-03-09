@@ -14,7 +14,7 @@ typedef struct {
     int header_count;
 } http_response;
 
-void add_header(http_response *response, const char *name, const char *value);
+void add_header(http_response *response, char *name, char *value);
 void build_http_response(http_response *response, char *output);
 void print_response(http_response request);
 

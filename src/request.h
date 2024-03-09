@@ -15,12 +15,12 @@ typedef struct {
     char version[MAX_VERSION_LENGTH];
     char headers[MAX_HEADER_COUNT][MAX_HEADER_NAME_LENGTH][MAX_HEADER_VALUE_LENGTH];
     int header_count;
-    int content_length;
+    long content_length;
     char body[MAX_BODY_LENGTH];
 } http_request;
 
 void parse_request(char *buffer, http_request *request);
-const char *get_header(http_request request,  char *header_name);
+void get_header_value(http_request *request, char *header_name, char *buffer, size_t buffer_size);
 void print_request(http_request request);
 
 #endif //NOVAWEB_REQUEST_H

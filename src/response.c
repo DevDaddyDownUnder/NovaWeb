@@ -3,18 +3,23 @@
 #include "response.h"
 
 // Helper function to add headers to the response object
-void add_header(http_response *response, const char *name, const char *value)
+void add_header(http_response *response, char *name, char *value)
 {
     // Check if there's space for another header
     if (response->header_count >= MAX_HEADER_COUNT)
     {
-        printf("Header limit exceeded.\n");
+        perror("Header limit exceeded.");
         return;
     }
 
     // Copy the header name and value into the response struct
-    strcpy(response->headers[response->header_count][0], name);
-    strcpy(response->headers[response->header_count][1], value);
+    strncpy(response->headers[response->header_count][0], name, MAX_HEADER_NAME_LENGTH);
+    strncpy(response->headers[response->header_count][1], value, MAX_HEADER_VALUE_LENGTH);
+
+    // Ensure null-terminated
+    response->headers[response->header_count][0][MAX_HEADER_NAME_LENGTH - 1] = '\0';
+    response->headers[response->header_count][1][MAX_HEADER_VALUE_LENGTH - 1] = '\0';
+
     response->header_count++;
 }
 
