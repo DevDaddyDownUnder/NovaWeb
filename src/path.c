@@ -6,7 +6,7 @@ void normalize_path(char *path)
     size_t length = strlen(path);
 
     // Replace backslashes with forward slashes
-    int i;
+    size_t i;
     for (i = 0; i < length; i++)
     {
         if (path[i] == '\\')
@@ -16,7 +16,7 @@ void normalize_path(char *path)
     }
 
     // Remove redundant slashes and trailing slash (except for root directory)
-    int j = 0;
+    size_t j = 0;
     for (i = 0; i < length; i++)
     {
         if (!(path[i] == '/' && (i + 1 < length && path[i + 1] == '/')))
