@@ -27,10 +27,8 @@ void send_file(int client_socket, char *file_path)
 
         if (file_ptr == NULL)
         {
-            // TODO at this point I should send a 404
-            perror("Error opening requested file");
-            close(client_socket);
-            pthread_exit(NULL);
+            send_not_found(client_socket);
+            return;
         }
     }
 
@@ -64,11 +62,6 @@ void send_file(int client_socket, char *file_path)
 
     // Add Transfer-Encoding header
 //    add_header(&response, "Transfer-Encoding", "chunked");
-
-    // TODO add a flag to toggle adding this header or not
-    // TODO define NovaWeb label and version somewhere
-    // Add server header
-    add_header(&response, "Server", "NovaWeb/0.1");
 
     char output[MAX_RESPONSE_LENGTH];
     build_http_response(&response, output);
