@@ -8,17 +8,29 @@ void add_header(http_response *response, char *name, char *value)
     // Check if there's space for another header
     if (response->header_count >= MAX_HEADER_COUNT)
     {
-        perror("Header limit exceeded.");
+        perror("Header limit exceeded");
+        return;
+    }
+
+    if (strlen(name) >= MAX_HEADER_NAME_LENGTH)
+    {
+        fprintf(stderr, "Header name exceeds maximum length (%d)\n", MAX_HEADER_NAME_LENGTH);
+        return;
+    }
+
+    if (strlen(value) >= MAX_HEADER_VALUE_LENGTH)
+    {
+        fprintf(stderr, "Header value exceeds maximum length (%d)\n", MAX_HEADER_VALUE_LENGTH);
         return;
     }
 
     // Copy the header name and value into the response struct
-    strncpy(response->headers[response->header_count][0], name, MAX_HEADER_NAME_LENGTH);
-    strncpy(response->headers[response->header_count][1], value, MAX_HEADER_VALUE_LENGTH);
+    strncpy(response->headers[response->header_count].name, name, MAX_HEADER_NAME_LENGTH - 1);
+    strncpy(response->headers[response->header_count].value, value, MAX_HEADER_VALUE_LENGTH - 1);
 
     // Ensure null-terminated
-    response->headers[response->header_count][0][MAX_HEADER_NAME_LENGTH - 1] = '\0';
-    response->headers[response->header_count][1][MAX_HEADER_VALUE_LENGTH - 1] = '\0';
+    response->headers[response->header_count].name[MAX_HEADER_NAME_LENGTH - 1] = '\0';
+    response->headers[response->header_count].value[MAX_HEADER_VALUE_LENGTH - 1] = '\0';
 
     response->header_count++;
 }
@@ -36,10 +48,10 @@ void build_http_response(http_response *response, char *output)
     for (int i = 0; i < response->header_count; i++)
     {
         // Header name
-        strcat(output, response->headers[i][0]);
+        strcat(output, response->headers[i].name);
         strcat(output, ": ");
         // Header value
-        strcat(output, response->headers[i][1]);
+        strcat(output, response->headers[i].value);
         strcat(output, "\r\n");
     }
 
@@ -63,8 +75,8 @@ void print_response(http_response response)
     for (int i = 0; i < response.header_count; i++)
     {
         printf("%s: %s\n",
-               response.headers[i][0],
-               response.headers[i][1]);
+               response.headers[i].name,
+               response.headers[i].value);
     }
 
     // Print body
