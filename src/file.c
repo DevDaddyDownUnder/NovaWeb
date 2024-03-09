@@ -4,44 +4,24 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "file.h"
-#include "path.h"
-#include "response.h"
+#include "config.h"
+#include "directory.h"
 #include "http_status.h"
 #include "mime_types.h"
-#include "config.h"
+#include "path.h"
+#include "response.h"
 
 // Send the file to the client.
-void send_file(int client_socket, char *file_path)
+void send_file(int client_socket, char *file_path, struct stat st)
 {
     // Open requested file
     FILE *file_ptr = fopen(file_path, "r");
     if (file_ptr == NULL)
     {
-        // Add default extension if missing
-        if (strcmp(file_path, "/") != 0 && strchr(file_path, '.') == NULL)
-        {
-            strcat(file_path, DEFAULT_FILE_EXTENSION);
-            // Attempt to open file with default extension
-            file_ptr = fopen(file_path, "r");
-        }
-
-        if (file_ptr == NULL)
-        {
-            send_not_found(client_socket);
-            return;
-        }
+        send_not_found(client_socket);
+        return;
     }
 
-    // Get file size
-    struct stat st;
-    if (fstat(fileno(file_ptr), &st) < 0)
-    {
-        // TODO send a 500?
-        perror("Error getting file size.");
-        fclose(file_ptr);
-        close(client_socket);
-        pthread_exit(NULL);
-    }
     off_t file_size = st.st_size;
     char file_size_buffer[MAX_HEADER_VALUE_LENGTH];
     snprintf(file_size_buffer, sizeof(file_size_buffer), "%lld", file_size);
@@ -75,7 +55,6 @@ void send_file(int client_socket, char *file_path)
     size_t bytes_sent = send(client_socket, output, response_length, 0);
     if (bytes_sent < response_length)
     {
-        // TODO send a 500?
         perror("Error sending response headers");
         close(client_socket);
         pthread_exit(NULL);
@@ -117,7 +96,6 @@ void send_chunked_file_contents(int client_socket, FILE *file_ptr)
 {
     char buffer[FILE_BUFFER_SIZE];
     size_t bytes_read;
-    size_t bytes_sent;
 
     while ((bytes_read = fread(buffer, 1, FILE_BUFFER_SIZE, file_ptr)) > 0)
     {
@@ -158,7 +136,7 @@ int send_chunk(int client_socket, char *buffer, size_t size)
     }
 
     // Send chunk data
-    while (total_sent < size)
+    while ((size_t)total_sent < size)
     {
         bytes_sent = send(client_socket, buffer + total_sent, size - total_sent, 0);
         if (bytes_sent <= 0)
