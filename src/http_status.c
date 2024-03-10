@@ -78,7 +78,7 @@ http_status_mapping http_status_codes[MAX_STATUS_CODES] = {
 };
 
 // Get the status message for a given status code
-void get_status_message(http_status status_code, char *buffer, size_t buffer_size)
+void get_status_message(int status_code, char *buffer, size_t buffer_size)
 {
     for (size_t i = 0; i < sizeof(http_status_codes) / sizeof(http_status_codes[0]); i++)
     {

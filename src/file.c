@@ -33,6 +33,7 @@ void send_file(int client_socket, char *file_path)
 
     // Get file size
     struct stat st;
+    memset(&st, 0, sizeof(struct stat));
     if (stat(file_path, &st) != 0)
     {
         send_not_found(client_socket);
@@ -70,8 +71,8 @@ void send_file(int client_socket, char *file_path)
 
     // Send the response
     size_t response_length = strlen(output);
-    size_t bytes_sent = send(client_socket, output, response_length, 0);
-    if (bytes_sent < response_length)
+    ssize_t bytes_sent = send(client_socket, output, response_length, 0);
+    if (bytes_sent < (ssize_t)response_length)
     {
         perror("Error sending response headers");
         close(client_socket);
@@ -86,14 +87,15 @@ void send_file(int client_socket, char *file_path)
 void send_file_contents(int client_socket, FILE *file_ptr)
 {
     char buffer[FILE_BUFFER_SIZE];
-    size_t bytes_read, bytes_sent;
+    size_t bytes_read;
+    ssize_t bytes_sent;
 
     while ((bytes_read = fread(buffer, 1, FILE_BUFFER_SIZE, file_ptr)) > 0)
     {
-        size_t total_sent = 0;
-        while (total_sent < bytes_read)
+        ssize_t total_sent = 0;
+        while (total_sent < (ssize_t)bytes_read)
         {
-            bytes_sent = send(client_socket, buffer + total_sent, bytes_read - total_sent, 0);
+            bytes_sent = send(client_socket, buffer + total_sent, bytes_read - (size_t)total_sent, 0);
             if (bytes_sent <= 0)
             {
                 perror("Error sending file contents");
@@ -156,7 +158,7 @@ int send_chunk(int client_socket, char *buffer, size_t size)
     // Send chunk data
     while ((size_t)total_sent < size)
     {
-        bytes_sent = send(client_socket, buffer + total_sent, size - total_sent, 0);
+        bytes_sent = send(client_socket, buffer + total_sent, size - (size_t)total_sent, 0);
         if (bytes_sent <= 0)
         {
             perror("Error sending file contents");

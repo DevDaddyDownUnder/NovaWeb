@@ -79,12 +79,12 @@ typedef enum {
 } http_status;
 
 typedef struct {
-    http_status code;
+    int code;
     char message[MAX_STATUS_MESSAGE_LENGTH];
 } http_status_mapping;
 
 extern http_status_mapping http_status_codes[MAX_STATUS_CODES];
 
-void get_status_message(http_status status_code, char *buffer, size_t buffer_size);
+void get_status_message(int status_code, char *buffer, size_t buffer_size);
 
 #endif //NOVAWEB_HTTP_STATUS_H

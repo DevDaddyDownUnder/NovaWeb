@@ -26,7 +26,7 @@
 volatile sig_atomic_t stop_server = 0;
 
 // Main logic to set up the socket and listen for new connections.
-void start_http_server(int domain, unsigned long interface, int port, int backlog)
+void start_http_server(unsigned char domain, unsigned int interface, int port, int backlog)
 {
     int server_socket;
     int client_socket;
@@ -246,6 +246,7 @@ void *handle_client(void *arg)
 
         // Check if the default file exists
         struct stat st;
+        memset(&st, 0, sizeof(struct stat));
         if (stat(default_file, &st) == 0)
         {
             // Copy the concatenated path back to file_path
@@ -265,6 +266,7 @@ void *handle_client(void *arg)
 
     // Check if the requested file is a directory
     struct stat st;
+    memset(&st, 0, sizeof(struct stat));
     stat(file_path, &st);
 
     // Send directory list or file

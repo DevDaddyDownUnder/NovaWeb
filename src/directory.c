@@ -91,6 +91,7 @@ void build_directory_listing_response(http_response *response, char *directory_p
         char file_path[FILE_BUFFER_SIZE];
         snprintf(file_path, FILE_BUFFER_SIZE, "%s/%s", directory_path, entry->d_name);
         struct stat st;
+        memset(&st, 0, sizeof(struct stat));
 
         if (stat(file_path, &st) != 0)
         {

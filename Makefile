@@ -2,7 +2,21 @@
 CC = gcc
 
 # Compiler flags
-CFLAGS = -Wall -Wextra -pedantic -std=c11
+STD = -std=c11
+CFLAGS = -Wall \
+ 		 -Werror \
+ 		 -Wextra \
+ 		 -Wuninitialized \
+ 		 -Wunused \
+ 		 -Wconversion \
+ 		 -Wformat \
+ 		 -Wmissing-prototypes \
+ 		 -Wshadow \
+ 		 -Wsign-compare \
+ 		 -Wfloat-equal \
+ 		 -Wpointer-arith \
+ 		 -Wswitch-enum \
+ 		 -pedantic
 
 # Source files
 SRCS = \
@@ -30,11 +44,15 @@ all: $(TARGET)
 
 # Rule to build the executable
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) $(STD) -o $@ $^
 
 # Rule to compile source files
 build/%.o: src/%.c | build
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(STD) -c -o $@ $<
+
+# Rule to create the build directory
+build:
+	mkdir -p build
 
 # Install the binary
 install:
@@ -42,4 +60,4 @@ install:
 
 # Clean target to remove object files and executable
 clean:
-	rm -f build
+	rm -rf build

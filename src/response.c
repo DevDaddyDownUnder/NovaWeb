@@ -119,8 +119,8 @@ void send_not_found(int client_socket)
 
     // Send the response
     size_t response_length = strlen(output);
-    size_t bytes_sent = send(client_socket, output, response_length, 0);
-    if (bytes_sent < response_length)
+    ssize_t bytes_sent = send(client_socket, output, response_length, 0);
+    if (bytes_sent < (ssize_t)response_length)
     {
         perror("Error sending response headers");
         close(client_socket);
