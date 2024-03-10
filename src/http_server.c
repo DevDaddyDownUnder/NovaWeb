@@ -9,7 +9,6 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <unistd.h>
 #include "http_server.h"
 #include "config.h"
@@ -27,7 +26,7 @@
 volatile sig_atomic_t stop_server = 0;
 
 // Main logic to set up the socket and listen for new connections.
-void start_http_server(int domain, u_long interface, int port, int backlog)
+void start_http_server(int domain, unsigned long interface, int port, int backlog)
 {
     int server_socket;
     int client_socket;
@@ -153,9 +152,14 @@ void *handle_client(void *arg)
     bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
     if (bytes_received < 0)
     {
-        // Bad file descriptor is occurring with JMeter spam sometimes
-        if (errno != EBADF)
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
         {
+            // No data available at the moment
+            // TODO maybe add retry logic
+        }
+        else if (errno != EBADF)
+        {
+            // Bad file descriptor is occurring with JMeter spam sometimes
             perror("Error receiving data from client");
         }
 
@@ -190,36 +194,68 @@ void *handle_client(void *arg)
 
     // Build absolute file path based on document root
     char host[BUFFER_SIZE];
-    get_header_value(&request, "Host", host, sizeof(host));
+    get_header_value(&request, "Host", host, BUFFER_SIZE);
 
     // Get document root
     char file_path[BUFFER_SIZE];
     char document_root[BUFFER_SIZE];
-    get_document_root(host, document_root, sizeof(document_root));
+    get_document_root(host, document_root, BUFFER_SIZE);
     if (strcmp(request.uri, "/") == 0)
     {
-        snprintf(file_path, sizeof(file_path), "%s", document_root);
+        strncpy(file_path, document_root, BUFFER_SIZE - 1);
+        file_path[BUFFER_SIZE - 1] = '\0';
     }
     else
     {
-        snprintf(file_path, sizeof(file_path), "%s/%s", document_root, request.uri);
+        char temp_path[BUFFER_SIZE];
+        int temp_path_length = snprintf(temp_path, BUFFER_SIZE, "%s/%s", document_root, request.uri);
+        if (temp_path_length >= BUFFER_SIZE || temp_path_length < 0)
+        {
+            perror("Error combined length of document root and request uri exceed the buffer");
+            close(client_socket);
+            pthread_exit(NULL);
+        }
+
+        // Copy the concatenated path into file_path
+        strncpy(file_path, temp_path, BUFFER_SIZE);
+        file_path[BUFFER_SIZE - 1] = '\0';
     }
 
     // Set the default file if it exists
     if (directory_listing_flag && strchr(file_path, '.') == NULL)
     {
-        char default_file[BUFFER_SIZE];
-        snprintf(default_file, sizeof(default_file), "%s/%s", file_path, DEFAULT_FILE);
+        // Calculate the length of the default file path
+        size_t default_file_length = strlen(file_path) + strlen(DEFAULT_FILE) + 1;
 
+        // Check if the combined length exceeds the buffer size
+        if (default_file_length > BUFFER_SIZE)
+        {
+            perror("Error combined length of file path and default file exceed the buffer");
+            close(client_socket);
+            pthread_exit(NULL);
+        }
+
+        // Concatenate file_path and DEFAULT_FILE into default_file
+        char default_file[BUFFER_SIZE];
+        // -2 to leave space for '/', '\0'
+        strncpy(default_file, file_path, BUFFER_SIZE - strlen(DEFAULT_FILE) - 2);
+        // Add '/'
+        default_file[BUFFER_SIZE - strlen(DEFAULT_FILE) - 2] = '/';
+        // +1 for the null terminator
+        strncpy(default_file + strlen(default_file), DEFAULT_FILE, strlen(DEFAULT_FILE) + 1);
+
+        // Check if the default file exists
         struct stat st;
         if (stat(default_file, &st) == 0)
         {
-            snprintf(file_path, sizeof(file_path), "%s/%s", file_path, DEFAULT_FILE);
+            // Copy the concatenated path back to file_path
+            strncpy(file_path, default_file, BUFFER_SIZE);
+            file_path[BUFFER_SIZE - 1] = '\0';
         }
     }
 
     // URL decode the file_path, names with special characters and URL encoded
-    url_decode(file_path, file_path, sizeof(file_path));
+    url_decode(file_path, file_path, BUFFER_SIZE);
 
     if (verbose_flag)
     {
@@ -229,12 +265,7 @@ void *handle_client(void *arg)
 
     // Check if the requested file is a directory
     struct stat st;
-    if (stat(file_path, &st) != 0)
-    {
-        send_not_found(client_socket);
-        close(client_socket);
-        pthread_exit(NULL);
-    }
+    stat(file_path, &st);
 
     // Send directory list or file
     if (directory_listing_flag && S_ISDIR(st.st_mode))
@@ -242,10 +273,15 @@ void *handle_client(void *arg)
         // Send directory listing
         send_directory_listing(client_socket, file_path, document_root);
     }
+    else if (!directory_listing_flag && S_ISDIR(st.st_mode))
+    {
+        // Not allowed directory access at this point
+        send_not_found(client_socket);
+    }
     else
     {
         // Send the requested file
-        send_file(client_socket, file_path, st);
+        send_file(client_socket, file_path);
     }
 
     // Close file and client socket
