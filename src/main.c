@@ -14,7 +14,7 @@ void print_welcome(void);
 int main(int argc, char *argv[])
 {
     int opt;
-    int port = DEFAULT_PORT;
+    uint16_t port = DEFAULT_PORT;
     char *host = NULL;
     char *document_root = NULL;
 
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
                     return 1;
                 }
 
-                port = (int) port_long;
+                port = (uint16_t) port_long;
                 break;
             }
             case 'h':

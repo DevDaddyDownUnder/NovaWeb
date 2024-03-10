@@ -26,7 +26,7 @@
 volatile sig_atomic_t stop_server = 0;
 
 // Main logic to set up the socket and listen for new connections.
-void start_http_server(unsigned char domain, unsigned int interface, int port, int backlog)
+void start_http_server(unsigned char domain, unsigned int interface, uint16_t port, int backlog)
 {
     int server_socket;
     int client_socket;
