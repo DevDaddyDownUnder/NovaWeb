@@ -1,20 +1,23 @@
 #include <dirent.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+#include <sys/select.h>
 #include <sys/socket.h>
-#include <unistd.h>
 #include <sys/stat.h>
-#include <errno.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include "http_server.h"
+#include "config.h"
+#include "directory.h"
 #include "file.h"
 #include "path.h"
 #include "request.h"
 #include "virtual_host.h"
-#include "config.h"
-#include "directory.h"
 #include "url.h"
 
 #define BUFFER_SIZE 1024
@@ -168,7 +171,7 @@ void *handle_client(void *arg)
 
     // Parse request
     http_request request;
-//    memset(&request, 0, sizeof(http_request));
+    memset(&request, 0, sizeof(http_request));
     parse_request(buffer, &request);
     if (verbose_flag)
     {
