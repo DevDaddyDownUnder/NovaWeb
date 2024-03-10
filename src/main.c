@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     const struct option long_options[] = {
             // Verbose option sets a flag
             {"verbose", no_argument, &verbose_flag, 1},
-            {"dl", no_argument, &directory_listing_flag, 0},
+            {"dl", no_argument, &directory_listing_flag, 1},
 
             // These options don't set a flag
             {"port", required_argument, NULL, 'p'},

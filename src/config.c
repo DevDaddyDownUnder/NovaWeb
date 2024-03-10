@@ -4,4 +4,4 @@
 int verbose_flag = 0;
 
 // Default directory listing to true
-int directory_listing_flag = 1;
+int directory_listing_flag = 0;
