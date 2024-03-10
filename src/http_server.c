@@ -240,7 +240,7 @@ void *handle_client(void *arg)
         // -2 to leave space for '/', '\0'
         strncpy(default_file, file_path, BUFFER_SIZE - strlen(DEFAULT_FILE) - 2);
         // Add '/'
-        default_file[BUFFER_SIZE - strlen(DEFAULT_FILE) - 2] = '/';
+        default_file[strlen(default_file)] = '/';
         // +1 for the null terminator
         strncpy(default_file + strlen(default_file), DEFAULT_FILE, strlen(DEFAULT_FILE) + 1);
 
