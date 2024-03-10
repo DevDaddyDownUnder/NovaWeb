@@ -16,7 +16,7 @@ void send_directory_listing(int client_socket, char *directory_path, char *docum
     memset(&response, 0, sizeof(http_response));
     response.status_code = OK;
     get_status_message(response.status_code, response.status_message, sizeof(response.status_message));
-    add_header(&response, "Content-Type", "text/html");
+    add_response_header(&response, "Content-Type", "text/html");
 
     // Build directory listing HTML
     build_directory_listing_response(&response, directory_path, document_root);
@@ -32,7 +32,7 @@ void send_directory_listing(int client_socket, char *directory_path, char *docum
     // Send the response
     size_t response_length = strlen(output);
     ssize_t bytes_sent = send(client_socket, output, response_length, 0);
-    if (bytes_sent < response_length)
+    if (bytes_sent < (ssize_t)response_length)
     {
         perror("Error sending response headers");
         return;
@@ -121,11 +121,11 @@ void build_directory_listing_response(http_response *response, char *directory_p
             // File size in bytes
             off_t file_size = st.st_size;
             snprintf(listing_buffer, FILE_BUFFER_SIZE,
-                     "<tr><td><a href=\"./%s\">%s</a></td><td>%s</td><td>%lld</td></tr>",
+                     "<tr><td><a href=\"./%s\">%s</a></td><td>%s</td><td>%ld</td></tr>",
                      entry->d_name,
                      entry->d_name,
                      last_modified,
-                     file_size);
+                     (long)file_size);
         }
 
         strcat(response->body, listing_buffer);
@@ -136,20 +136,4 @@ void build_directory_listing_response(http_response *response, char *directory_p
 
     // Close directory
     closedir(dir);
-}
-
-// Check if a file pointer represents a directory.
-int is_directory(FILE *file_ptr)
-{
-    struct stat st;
-    if (fstat(fileno(file_ptr), &st) == 0)
-    {
-        return S_ISDIR(st.st_mode);
-    }
-    else
-    {
-        perror("Error getting file status");
-
-        return -1;
-    }
 }

@@ -30,14 +30,6 @@ void parse_request(char *buffer, http_request *request)
             // Should be + 1, TODO create a trim function
             char *header_value = colon + 2;
 
-            // Copy the header name and value into the struct
-            snprintf(request->headers[request->header_count][0], MAX_HEADER_NAME_LENGTH, "%s", header_name);
-            snprintf(request->headers[request->header_count][1], MAX_HEADER_VALUE_LENGTH, "%s", header_value);
-
-            // Ensure null-terminated
-            request->headers[request->header_count][0][MAX_HEADER_NAME_LENGTH - 1] = '\0';
-            request->headers[request->header_count][1][MAX_HEADER_VALUE_LENGTH - 1] = '\0';
-
             // Check if the header is "Content-Length" to extract the content length
             if (strcmp(header_name, "Content-Length") == 0)
             {
@@ -54,8 +46,8 @@ void parse_request(char *buffer, http_request *request)
                 }
             }
 
-            // Increment the header count
-            request->header_count++;
+            // Add header
+            add_request_header(request, header_name, header_value);
         }
 
         // Move to the next line
@@ -63,15 +55,48 @@ void parse_request(char *buffer, http_request *request)
     }
 }
 
+// Helper function to add headers to the request object.
+void add_request_header(http_request *request, char *name, char *value)
+{
+    // Check if there's space for another header
+    if (request->header_count >= MAX_HEADER_COUNT)
+    {
+        perror("Header limit exceeded");
+        return;
+    }
+
+    if (strlen(name) >= MAX_HEADER_NAME_LENGTH)
+    {
+        fprintf(stderr, "Request header name (%s) exceeds maximum length (%d)\n", name, MAX_HEADER_NAME_LENGTH);
+        return;
+    }
+
+    if (strlen(value) >= MAX_HEADER_VALUE_LENGTH)
+    {
+        fprintf(stderr, "Request header value (%s) exceeds maximum length (%d)\n", value, MAX_HEADER_VALUE_LENGTH);
+        return;
+    }
+
+    // Copy the header name and value into the response struct
+    strncpy(request->headers[request->header_count].name, name, MAX_HEADER_NAME_LENGTH - 1);
+    strncpy(request->headers[request->header_count].value, value, MAX_HEADER_VALUE_LENGTH - 1);
+
+    // Ensure null-terminated
+    request->headers[request->header_count].name[MAX_HEADER_NAME_LENGTH - 1] = '\0';
+    request->headers[request->header_count].value[MAX_HEADER_VALUE_LENGTH - 1] = '\0';
+
+    request->header_count++;
+}
+
 // Function to find a header by name
 void get_header_value(http_request *request, char *header_name, char *buffer, size_t buffer_size)
 {
     for (int i = 0; i < request->header_count; i++)
     {
-        if (strcmp(request->headers[i][0], header_name) == 0)
+        if (strcmp(request->headers[i].name, header_name) == 0)
         {
             // Copy the header value into the buffer
-            snprintf(buffer, buffer_size, "%s", request->headers[i][1]);
+            strncpy(buffer, request->headers[i].value, buffer_size);
             return;
         }
     }
@@ -89,12 +114,12 @@ void print_request(http_request request)
     // Print the headers
     for (int i = 0; i < MAX_HEADER_COUNT; i++)
     {
-        if (strlen(request.headers[i][0]) < 1)
+        if (strlen(request.headers[i].name) < 1)
         {
             break;
         }
 
-        printf("Header: %s, Value: %s\n", request.headers[i][0], request.headers[i][1]);
+        printf("Header: %s, Value: %s\n", request.headers[i].name, request.headers[i].value);
     }
 
     printf("\n");

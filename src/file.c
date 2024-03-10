@@ -5,26 +5,44 @@
 #include <unistd.h>
 #include "file.h"
 #include "config.h"
-#include "directory.h"
 #include "http_status.h"
 #include "mime_types.h"
 #include "path.h"
 #include "response.h"
 
 // Send the file to the client.
-void send_file(int client_socket, char *file_path, struct stat st)
+void send_file(int client_socket, char *file_path)
 {
     // Open requested file
     FILE *file_ptr = fopen(file_path, "r");
     if (file_ptr == NULL)
     {
+        // Add default extension if missing
+        if (strcmp(file_path, "/") != 0 && strchr(file_path, '.') == NULL)
+        {
+            strcat(file_path, DEFAULT_FILE_EXTENSION);
+            // Attempt to open file with default extension
+            file_ptr = fopen(file_path, "r");
+        }
+        if (file_ptr == NULL)
+        {
+            send_not_found(client_socket);
+            return;
+        }
+    }
+
+    // Get file size
+    struct stat st;
+    if (stat(file_path, &st) != 0)
+    {
         send_not_found(client_socket);
-        return;
+        close(client_socket);
+        pthread_exit(NULL);
     }
 
     off_t file_size = st.st_size;
     char file_size_buffer[MAX_HEADER_VALUE_LENGTH];
-    snprintf(file_size_buffer, sizeof(file_size_buffer), "%lld", file_size);
+    snprintf(file_size_buffer, sizeof(file_size_buffer), "%ld", (long)file_size);
 
     // Build response
     http_response response;
@@ -35,10 +53,10 @@ void send_file(int client_socket, char *file_path, struct stat st)
     // Get mime type of the file
     char mime_type[MAX_MIME_TYPE_LENGTH];
     get_mime_type(file_path ,mime_type, sizeof(mime_type));
-    add_header(&response, "Content-Type", mime_type);
+    add_response_header(&response, "Content-Type", mime_type);
 
     // Add content length header
-    add_header(&response, "Content-Length", file_size_buffer);
+    add_response_header(&response, "Content-Length", file_size_buffer);
 
     // Add Transfer-Encoding header
 //    add_header(&response, "Transfer-Encoding", "chunked");

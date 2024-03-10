@@ -7,8 +7,8 @@
 #include "http_status.h"
 #include "config.h"
 
-// Helper function to add headers to the response object
-void add_header(http_response *response, char *name, char *value)
+// Helper function to add headers to the response object.
+void add_response_header(http_response *response, char *name, char *value)
 {
     // Check if there's space for another header
     if (response->header_count >= MAX_HEADER_COUNT)
@@ -19,13 +19,13 @@ void add_header(http_response *response, char *name, char *value)
 
     if (strlen(name) >= MAX_HEADER_NAME_LENGTH)
     {
-        fprintf(stderr, "Header name exceeds maximum length (%d)\n", MAX_HEADER_NAME_LENGTH);
+        fprintf(stderr, "Response header name (%s) exceeds maximum length (%d)\n", name, MAX_HEADER_NAME_LENGTH);
         return;
     }
 
     if (strlen(value) >= MAX_HEADER_VALUE_LENGTH)
     {
-        fprintf(stderr, "Header value exceeds maximum length (%d)\n", MAX_HEADER_VALUE_LENGTH);
+        fprintf(stderr, "Response header value (%s) exceeds maximum length (%d)\n", value, MAX_HEADER_VALUE_LENGTH);
         return;
     }
 
@@ -46,7 +46,7 @@ void build_http_response(http_response *response, char *output)
     // TODO add a flag to toggle adding this header or not
     // TODO define NovaWeb label and version somewhere
     // Add server header
-    add_header(response, "Server", "NovaWeb/0.1");
+    add_response_header(response, "Server", "NovaWeb/0.1");
 
     // Build status line
     sprintf(output, "HTTP/%s %d %s\r\n",
@@ -100,7 +100,7 @@ void send_not_found(int client_socket)
     memset(&response, 0, sizeof(http_response));
     response.status_code = NOT_FOUND;
     get_status_message(response.status_code, response.status_message, sizeof(response.status_message));
-    add_header(&response, "Content-Type", "text/html");
+    add_response_header(&response, "Content-Type", "text/html");
 
     strncpy(response.body, "<!DOCTYPE html>"
                            "<html>"
