@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "http_server.h"
 #include "config.h"
 #include "directory.h"
@@ -33,11 +34,9 @@ void start_http_server(unsigned char domain, unsigned int interface, uint16_t po
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
-    pthread_t thread_id;
 
     // Create server socket
-    server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_socket < 0)
+    if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("Error creating socket");
         exit(EXIT_FAILURE);
@@ -104,17 +103,22 @@ void start_http_server(unsigned char domain, unsigned int interface, uint16_t po
         }
 
         // Accept incoming connection
-        client_socket = accept(server_socket, (struct sockaddr *) &client_addr, &client_addr_len);
-        if (client_socket < 0)
+        if ((client_socket = accept(server_socket, (struct sockaddr *) &client_addr, &client_addr_len)) < 0)
         {
             perror("Error accepting connection");
             continue;
         }
 
+        // Dynamically allocate memory for client_socket
+        int *client_socket_ptr = malloc(sizeof(int));
+        *client_socket_ptr = client_socket;
+
         // Create a new thread to handle the client connection
-        if (pthread_create(&thread_id, NULL, handle_client, (void *) &client_socket) != 0)
+        pthread_t thread_id;
+        if (pthread_create(&thread_id, NULL, handle_client, (void *) client_socket_ptr) != 0)
         {
             perror("Error creating thread");
+            free(client_socket_ptr);
             close(client_socket);
             continue;
         }
@@ -123,6 +127,7 @@ void start_http_server(unsigned char domain, unsigned int interface, uint16_t po
         if (pthread_detach(thread_id) != 0)
         {
             perror("Error detaching thread");
+            free(client_socket_ptr);
             close(client_socket);
             continue;
         }
@@ -285,6 +290,9 @@ void *handle_client(void *arg)
         // Send the requested file
         send_file(client_socket, file_path);
     }
+
+    // Free client_socket_ptr
+    free(arg);
 
     // Close file and client socket
     close(client_socket);
