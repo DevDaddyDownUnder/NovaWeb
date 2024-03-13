@@ -85,6 +85,6 @@ typedef struct {
 
 extern http_status_mapping http_status_codes[MAX_STATUS_CODES];
 
-void get_status_message(int status_code, char *buffer, size_t buffer_size);
+char *get_status_message(int status_code);
 
 #endif //NOVAWEB_HTTP_STATUS_H

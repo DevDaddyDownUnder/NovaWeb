@@ -78,16 +78,15 @@ http_status_mapping http_status_codes[MAX_STATUS_CODES] = {
 };
 
 // Get the status message for a given status code
-void get_status_message(int status_code, char *buffer, size_t buffer_size)
+char *get_status_message(int status_code)
 {
     for (size_t i = 0; i < sizeof(http_status_codes) / sizeof(http_status_codes[0]); i++)
     {
         if (http_status_codes[i].code == status_code)
         {
-            snprintf(buffer, buffer_size, "%s", http_status_codes[i].message);
-            return;
+            return http_status_codes[i].message;
         }
     }
 
-    snprintf(buffer, buffer_size, "%s", "Unknown Status");
+    return "Unknown Status";
 }
