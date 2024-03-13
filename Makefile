@@ -31,7 +31,8 @@ SRCS = \
 	src/http_status.c \
 	src/config.c \
 	src/directory.c \
-	src/url.c
+	src/url.c \
+	src/string.c
 
 # Object files
 OBJS = $(patsubst src/%.c, build/%.o, $(SRCS))

@@ -28,4 +28,5 @@ add_executable(NovaWeb src/main.c
         src/http_status.c
         src/config.c
         src/directory.c
-        src/url.c)
+        src/url.c
+        src/string.c)
