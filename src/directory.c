@@ -9,13 +9,12 @@
 #include "response.h"
 
 // Send a list of files and directories in the specified path to the client.
-void send_directory_listing(int client_socket, char *directory_path, char *document_root)
+bool send_directory_listing(int client_socket, char *directory_path, char *document_root)
 {
     // Build response
     http_response response;
     memset(&response, 0, sizeof(http_response));
     response.status_code = OK;
-    get_status_message(response.status_code, response.status_message, sizeof(response.status_message));
     add_response_header(&response, "Content-Type", "text/html");
 
     // Build directory listing HTML
@@ -35,8 +34,10 @@ void send_directory_listing(int client_socket, char *directory_path, char *docum
     if (bytes_sent < (ssize_t)response_length)
     {
         perror("Error sending response headers");
-        return;
+        return false;
     }
+
+    return true;
 }
 
 // Loop through the directory and build the response body.
