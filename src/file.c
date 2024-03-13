@@ -2,7 +2,6 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include "file.h"
 #include "config.h"
 #include "http_status.h"
@@ -11,7 +10,7 @@
 #include "response.h"
 
 // Send the file to the client.
-void send_file(int client_socket, char *file_path)
+bool send_file(int client_socket, char *file_path)
 {
     // Open requested file
     FILE *file_ptr = fopen(file_path, "r");
@@ -27,7 +26,7 @@ void send_file(int client_socket, char *file_path)
         if (file_ptr == NULL)
         {
             send_not_found(client_socket);
-            return;
+            return false;
         }
     }
 
@@ -37,8 +36,7 @@ void send_file(int client_socket, char *file_path)
     if (stat(file_path, &st) != 0)
     {
         send_not_found(client_socket);
-        close(client_socket);
-        pthread_exit(NULL);
+        return false;
     }
 
     off_t file_size = st.st_size;
@@ -49,11 +47,9 @@ void send_file(int client_socket, char *file_path)
     http_response response;
     memset(&response, 0, sizeof(http_response));
     response.status_code = OK;
-    get_status_message(response.status_code, response.status_message, sizeof(response.status_message));
 
     // Get mime type of the file
-    char mime_type[MAX_MIME_TYPE_LENGTH];
-    get_mime_type(file_path ,mime_type, sizeof(mime_type));
+    char *mime_type = get_mime_type(file_path);
     add_response_header(&response, "Content-Type", mime_type);
 
     // Add content length header
@@ -75,16 +71,15 @@ void send_file(int client_socket, char *file_path)
     if (bytes_sent < (ssize_t)response_length)
     {
         perror("Error sending response headers");
-        close(client_socket);
-        pthread_exit(NULL);
+        return false;
     }
 
     // Send the file contents
-    send_file_contents(client_socket, file_ptr);
+    return send_file_contents(client_socket, file_ptr);
 }
 
 // Read the files contents and send it to the client
-void send_file_contents(int client_socket, FILE *file_ptr)
+bool send_file_contents(int client_socket, FILE *file_ptr)
 {
     char buffer[FILE_BUFFER_SIZE];
     size_t bytes_read;
@@ -100,8 +95,7 @@ void send_file_contents(int client_socket, FILE *file_ptr)
             {
                 perror("Error sending file contents");
                 fclose(file_ptr);
-                close(client_socket);
-                pthread_exit(NULL);
+                return false;
             }
             total_sent += bytes_sent;
         }
@@ -109,10 +103,12 @@ void send_file_contents(int client_socket, FILE *file_ptr)
 
     // Close file pointer
     fclose(file_ptr);
+
+    return true;
 }
 
 // Read the files contents and send it to the client
-void send_chunked_file_contents(int client_socket, FILE *file_ptr)
+bool send_chunked_file_contents(int client_socket, FILE *file_ptr)
 {
     char buffer[FILE_BUFFER_SIZE];
     size_t bytes_read;
@@ -122,8 +118,7 @@ void send_chunked_file_contents(int client_socket, FILE *file_ptr)
         if (send_chunk(client_socket, buffer, bytes_read) == 0)
         {
             fclose(file_ptr);
-            close(client_socket);
-            pthread_exit(NULL);
+            return false;
         }
     }
 
@@ -135,10 +130,12 @@ void send_chunked_file_contents(int client_socket, FILE *file_ptr)
 
     // Close file pointer
     fclose(file_ptr);
+
+    return true;
 }
 
 // Send a chunk of data.
-int send_chunk(int client_socket, char *buffer, size_t size)
+bool send_chunk(int client_socket, char *buffer, size_t size)
 {
     char chunk_header[20];
     ssize_t bytes_sent;
@@ -152,7 +149,7 @@ int send_chunk(int client_socket, char *buffer, size_t size)
     if (bytes_sent <= 0)
     {
         perror("Error sending chunk header");
-        return 0;
+        return false;
     }
 
     // Send chunk data
@@ -162,7 +159,7 @@ int send_chunk(int client_socket, char *buffer, size_t size)
         if (bytes_sent <= 0)
         {
             perror("Error sending file contents");
-            return 0;
+            return false;
         }
 
         total_sent += bytes_sent;
@@ -173,8 +170,8 @@ int send_chunk(int client_socket, char *buffer, size_t size)
     if (bytes_sent <= 0)
     {
         perror("Error sending chunk end marker");
-        return 0;
+        return false;
     }
 
-    return 1;
+    return true;
 }
