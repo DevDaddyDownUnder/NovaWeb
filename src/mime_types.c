@@ -115,7 +115,7 @@ mime_mapping mime_types[MAX_MIME_TYPES] = {
 };
 
 // Get the mime type based on the file extension, fallback is text/plain.
-void get_mime_type(char *filename, char *buffer, size_t buffer_size)
+char *get_mime_type(char *filename)
 {
     char *extension = strrchr(filename, '.');
 
@@ -125,11 +125,10 @@ void get_mime_type(char *filename, char *buffer, size_t buffer_size)
         {
             if (strcmp(extension, mime_types[i].extension) == 0)
             {
-                snprintf(buffer, buffer_size, "%s", mime_types[i].mime_type);
-                return;
+                return mime_types[i].mime_type;
             }
         }
     }
 
-    snprintf(buffer, buffer_size, "%s", "text/plain");
+    return "text/plain";
 }

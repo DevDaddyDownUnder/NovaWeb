@@ -15,6 +15,6 @@ typedef struct {
 
 extern mime_mapping mime_types[MAX_MIME_TYPES];
 
-void get_mime_type(char *filename, char *buffer, size_t buffer_size);
+char *get_mime_type(char *filename);
 
 #endif //HTTPSERVER_MIME_TYPES_H
