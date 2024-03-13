@@ -144,7 +144,7 @@ void start_http_server(unsigned char domain, unsigned int interface, uint16_t po
 void *handle_client(void *arg)
 {
     int client_socket = *((int *) arg);
-    char buffer[BUFFER_SIZE];
+    char buffer[BUFFER_SIZE * 2];
     ssize_t bytes_received;
 
     // Set timeout for receive
@@ -169,12 +169,14 @@ void *handle_client(void *arg)
         }
 
         close(client_socket);
+        free(arg);
         pthread_exit(NULL);
     }
     else if (bytes_received == 0)
     {
         // Client closed the connection
         close(client_socket);
+        free(arg);
         pthread_exit(NULL);
     }
 
@@ -194,17 +196,16 @@ void *handle_client(void *arg)
         // TODO send a 400?
         perror("Error building file path");
         close(client_socket);
+        free(arg);
         pthread_exit(NULL);
     }
 
     // Build absolute file path based on document root
-    char host[BUFFER_SIZE];
-    get_header_value(&request, "Host", host, BUFFER_SIZE);
+    char *host = get_header_value(&request, "Host");
 
     // Get document root
     char file_path[BUFFER_SIZE];
-    char document_root[BUFFER_SIZE];
-    get_document_root(host, document_root, BUFFER_SIZE);
+    char *document_root = get_document_root(host);
     if (strcmp(request.uri, "/") == 0)
     {
         strncpy(file_path, document_root, BUFFER_SIZE - 1);
@@ -218,6 +219,7 @@ void *handle_client(void *arg)
         {
             perror("Error combined length of document root and request uri exceed the buffer");
             close(client_socket);
+            free(arg);
             pthread_exit(NULL);
         }
 
@@ -237,6 +239,7 @@ void *handle_client(void *arg)
         {
             perror("Error combined length of file path and default file exceed the buffer");
             close(client_socket);
+            free(arg);
             pthread_exit(NULL);
         }
 
@@ -291,11 +294,9 @@ void *handle_client(void *arg)
         send_file(client_socket, file_path);
     }
 
-    // Free client_socket_ptr
-    free(arg);
-
-    // Close file and client socket
+    // Cleanup
     close(client_socket);
+    free(arg);
     pthread_exit(NULL);
 }
 
