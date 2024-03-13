@@ -16,7 +16,8 @@ CFLAGS = -Wall \
  		 -Wfloat-equal \
  		 -Wpointer-arith \
  		 -Wswitch-enum \
- 		 -pedantic
+ 		 -pedantic \
+ 		 -D_GNU_SOURCE # GNU extension required for strsep function in request.c
 
 # Source files
 SRCS = \

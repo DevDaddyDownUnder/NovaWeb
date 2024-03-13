@@ -45,7 +45,7 @@ NovaWeb -p 8081 -h 127.0.0.1 -d /var/www/sites/example
 
 To build the binary yourself, follow the documentation matching your operating system.
 
-### macOS
+### macOS / Linux
 
 Open a terminal and navigate to the project root.
 

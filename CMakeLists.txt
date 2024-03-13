@@ -16,6 +16,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wfloat-equal")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wswitch-enum")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE")
 
 add_executable(NovaWeb src/main.c
         src/http_server.c
