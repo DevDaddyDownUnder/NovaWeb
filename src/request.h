@@ -15,7 +15,7 @@ typedef struct {
 
 void parse_request(char *buffer, http_request *request);
 void add_request_header(http_request *request, char *name, char *value);
-void get_header_value(http_request *request, char *header_name, char *buffer, size_t buffer_size);
+char* get_header_value(http_request *request, char *header_name);
 void print_request(http_request request);
 
 #endif //NOVAWEB_REQUEST_H

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "request.h"
+#include "string.h"
 
 // Parse the request from the buffer received from the client
 void parse_request(char *buffer, http_request *request)
@@ -13,22 +14,18 @@ void parse_request(char *buffer, http_request *request)
     // Default content length
     request->content_length = -1;
 
-    // Parse headers
-    char *line;
-
     // Tokenize the request by lines
-    line = strtok(buffer, "\r\n");
-    while (line != NULL)
+    char *token;
+    while ((token = strsep(&buffer, "\r\n")) != NULL)
     {
         // Check if the line contains a colon ':' to identify header lines
-        char *colon = strchr(line, ':');
+        char *colon = strchr(token, ':');
         if (colon != NULL)
         {
             // Extract the header name and value
-            *colon = '\0';  // Null-terminate the header name
-            char *header_name = line;
-            // Should be + 1, TODO create a trim function
-            char *header_value = colon + 2;
+            char *header_name = token;
+            *colon = '\0';
+            char *header_value = trim(colon + 1);
 
             // Check if the header is "Content-Length" to extract the content length
             if (strcmp(header_name, "Content-Length") == 0)
@@ -38,7 +35,7 @@ void parse_request(char *buffer, http_request *request)
                 long length = strtol(header_value, &endptr, 10);
                 if (errno == ERANGE || *endptr != '\0' || length < 0)
                 {
-                    fprintf(stderr, "Error converting Content-Length to integer.\n");
+                    perror("Error converting Content-Length to integer");
                 }
                 else
                 {
@@ -49,9 +46,6 @@ void parse_request(char *buffer, http_request *request)
             // Add header
             add_request_header(request, header_name, header_value);
         }
-
-        // Move to the next line
-        line = strtok(NULL, "\r\n");
     }
 }
 
@@ -89,20 +83,18 @@ void add_request_header(http_request *request, char *name, char *value)
 }
 
 // Function to find a header by name
-void get_header_value(http_request *request, char *header_name, char *buffer, size_t buffer_size)
+char* get_header_value(http_request *request, char *header_name)
 {
     for (int i = 0; i < request->header_count; i++)
     {
         if (strcmp(request->headers[i].name, header_name) == 0)
         {
-            // Copy the header value into the buffer
-            strncpy(buffer, request->headers[i].value, buffer_size);
-            return;
+            return request->headers[i].value;
         }
     }
 
-    // Header not found, write an empty string to the buffer
-    buffer[0] = '\0';
+    // Header not found
+    return "";
 }
 
 // Helper function to debug requests
