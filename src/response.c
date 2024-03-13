@@ -43,6 +43,9 @@ void add_response_header(http_response *response, char *name, char *value)
 // Build the response string based on the response object
 void build_http_response(http_response *response, char *output)
 {
+    // Set the status message based on the status code
+    strcpy(response->status_message, get_status_message(response->status_code));
+
     // TODO add a flag to toggle adding this header or not
     // TODO define NovaWeb label and version somewhere
     // Add server header
@@ -99,7 +102,6 @@ void send_not_found(int client_socket)
     http_response response;
     memset(&response, 0, sizeof(http_response));
     response.status_code = NOT_FOUND;
-    get_status_message(response.status_code, response.status_message, sizeof(response.status_message));
     add_response_header(&response, "Content-Type", "text/html");
 
     strncpy(response.body, "<!DOCTYPE html>"
