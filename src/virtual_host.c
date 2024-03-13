@@ -21,14 +21,13 @@ void add_host_config(char *host, char *document_root)
 }
 
 // Return the document root for the specified host.
-void get_document_root(char host[MAX_HOST_LENGTH], char *buffer, size_t buffer_size)
+char *get_document_root(char host[MAX_HOST_LENGTH])
 {
     for (int i = 0; i < sizeof_hosts; i++)
     {
         if (strcmp(host, hosts[i].host) == 0)
         {
-            snprintf(buffer, buffer_size, "%s", hosts[i].document_root);
-            return;
+            return hosts[i].document_root;
         }
     }
 
@@ -36,10 +35,9 @@ void get_document_root(char host[MAX_HOST_LENGTH], char *buffer, size_t buffer_s
     static char cwd[MAX_DOCUMENT_ROOT_LENGTH];
     if (getcwd(cwd, sizeof(cwd)) != NULL)
     {
-        snprintf(buffer, buffer_size, "%s", cwd);
-        return;
+        return cwd;
     }
 
     perror("Unable to fallback to the directory where the program was executed. getcwd() error.");
-    snprintf(buffer, buffer_size, "%c", '\0');
+    return "";
 }
