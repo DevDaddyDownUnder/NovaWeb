@@ -61,10 +61,11 @@ void build_directory_listing_response(http_response *response, char *directory_p
     }
 
     // Build HTML header
-    snprintf(response->body, MAX_BODY_LENGTH, "<!DOCTYPE html>"
-                                              "<html><head><title>Directory Listing</title></head>"
-                                              "<body><h1>Directory Listing</h1>"
-                                              "<table><thead><th>Name</th><th>Last modified</th><th>Size</th><tbody>");
+    snprintf(response->body, MAX_BODY_LENGTH,
+             "<!DOCTYPE html>"
+             "<html><head><title>Directory Listing</title></head>"
+             "<body><h1>Directory Listing</h1>"
+             "<table><thead><th>Name</th><th>Last modified</th><th>Size</th><tbody>");
 
     // Iterate over directory entries and append HTML links
     struct dirent *entry;
