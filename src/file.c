@@ -1,6 +1,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <time.h>
 #include "file.h"
 #include "config.h"
 #include "http_status.h"
@@ -38,10 +39,6 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
         return false;
     }
 
-    off_t file_size = st.st_size;
-    char file_size_buffer[MAX_HEADER_VALUE_LENGTH];
-    snprintf(file_size_buffer, sizeof(file_size_buffer), "%ld", (long)file_size);
-
     // Build response
     http_response response;
     memset(&response, 0, sizeof(http_response));
@@ -52,10 +49,20 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
     add_response_header(&response, "Content-Type", mime_type);
 
     // Add content length header
+    off_t file_size = st.st_size;
+    char file_size_buffer[MAX_HEADER_VALUE_LENGTH];
+    snprintf(file_size_buffer, sizeof(file_size_buffer), "%ld", (long)file_size);
     add_response_header(&response, "Content-Length", file_size_buffer);
 
     // Add Transfer-Encoding header
-//    add_header(&response, "Transfer-Encoding", "chunked");
+//    add_response_header(&response, "Transfer-Encoding", "chunked");
+
+    // Add last modified header
+    char last_modified_buffer[30];
+    struct tm *tm_info;
+    tm_info = localtime(&st.st_mtime);
+    strftime(last_modified_buffer, sizeof(last_modified_buffer), "%Y-%m-%d %H:%M:%S %Z", tm_info);
+    add_response_header(&response, "Last-Modified", last_modified_buffer);
 
     // Add Connection header
     if (keep_alive)
@@ -63,7 +70,7 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
         add_response_header(&response, "Connection", "Keep-Alive");
 
         // Add Keep-Alive header
-        char keep_alive_buffer[MAX_HEADER_VALUE_LENGTH];
+        char keep_alive_buffer[20];
         snprintf(keep_alive_buffer, sizeof(keep_alive_buffer), "timeout=%d, max=%d", KEEP_ALIVE_TIMEOUT_SECONDS, KEEP_ALIVE_MAX_REQUESTS);
         add_response_header(&response, "Keep-Alive", keep_alive_buffer);
     }
@@ -90,6 +97,7 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
 
     // Send the file contents
     return send_file_contents(client_socket, file_ptr);
+//    return send_chunked_file_contents(client_socket, file_ptr);
 }
 
 // Read the files contents and send it to the client
