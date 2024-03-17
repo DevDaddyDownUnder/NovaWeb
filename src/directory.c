@@ -35,6 +35,11 @@ bool send_directory_listing(int client_socket, char *directory_path, char *docum
     // Build directory listing HTML
     build_directory_listing_response(&response, directory_path, document_root);
 
+    // Add content length header
+    char file_size_buffer[MAX_HEADER_VALUE_LENGTH];
+    snprintf(file_size_buffer, sizeof(file_size_buffer), "%ld", strlen(response.body));
+    add_response_header(&response, "Content-Length", file_size_buffer);
+
     // Build HTTP response
     char output[MAX_RESPONSE_LENGTH];
     build_http_response(&response, output);
