@@ -46,6 +46,16 @@ void build_http_response(http_response *response, char *output)
     // Set the status message based on the status code
     strcpy(response->status_message, get_status_message(response->status_code));
 
+    // TODO add a flag to toggle this header?
+    // Add date header
+    time_t current_time;
+    struct tm *tm_info;
+    char date_buffer[30];
+    time(&current_time);
+    tm_info = localtime(&current_time);
+    strftime(date_buffer, sizeof(date_buffer), "%Y-%m-%d %H:%M:%S %Z", tm_info);
+    add_response_header(response, "Date", date_buffer);
+
     // TODO add a flag to toggle adding this header or not
     // TODO define NovaWeb label and version somewhere
     // Add server header
