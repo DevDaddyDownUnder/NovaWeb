@@ -1,4 +1,3 @@
-#include <pthread.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -10,7 +9,7 @@
 #include "response.h"
 
 // Send the file to the client.
-bool send_file(int client_socket, char *file_path)
+bool send_file(int client_socket, char *file_path, bool keep_alive)
 {
     // Open requested file
     FILE *file_ptr = fopen(file_path, "r");
@@ -57,6 +56,21 @@ bool send_file(int client_socket, char *file_path)
 
     // Add Transfer-Encoding header
 //    add_header(&response, "Transfer-Encoding", "chunked");
+
+    // Add Connection header
+    if (keep_alive)
+    {
+        add_response_header(&response, "Connection", "Keep-Alive");
+
+        // Add Keep-Alive header
+        char keep_alive_buffer[MAX_HEADER_VALUE_LENGTH];
+        snprintf(keep_alive_buffer, sizeof(keep_alive_buffer), "timeout=%d, max=%d", KEEP_ALIVE_TIMEOUT_SECONDS, KEEP_ALIVE_MAX_REQUESTS);
+        add_response_header(&response, "Keep-Alive", keep_alive_buffer);
+    }
+    else
+    {
+        add_response_header(&response, "Connection", "close");
+    }
 
     char output[MAX_RESPONSE_LENGTH];
     build_http_response(&response, output);

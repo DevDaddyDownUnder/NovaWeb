@@ -4,7 +4,8 @@
 #include <sys/socket.h>
 
 #define DEFAULT_PORT 8080
-#define SOCKET_BACKLOG 100
+#define SOCKET_BACKLOG 128
+#define BUFFER_SIZE 1024
 
 void start_http_server(unsigned char domain, unsigned int interface, uint16_t port, int backlog);
 void * handle_client(void *client_socket);

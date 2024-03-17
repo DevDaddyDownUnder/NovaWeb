@@ -9,13 +9,28 @@
 #include "response.h"
 
 // Send a list of files and directories in the specified path to the client.
-bool send_directory_listing(int client_socket, char *directory_path, char *document_root)
+bool send_directory_listing(int client_socket, char *directory_path, char *document_root, bool keep_alive)
 {
     // Build response
     http_response response;
     memset(&response, 0, sizeof(http_response));
     response.status_code = OK;
     add_response_header(&response, "Content-Type", "text/html");
+
+    // Add Connection header
+    if (keep_alive)
+    {
+        add_response_header(&response, "Connection", "Keep-Alive");
+
+        // Add Keep-Alive header
+        char keep_alive_buffer[MAX_HEADER_VALUE_LENGTH];
+        snprintf(keep_alive_buffer, sizeof(keep_alive_buffer), "timeout=%d, max=%d", KEEP_ALIVE_TIMEOUT_SECONDS, KEEP_ALIVE_MAX_REQUESTS);
+        add_response_header(&response, "Keep-Alive", keep_alive_buffer);
+    }
+    else
+    {
+        add_response_header(&response, "Connection", "close");
+    }
 
     // Build directory listing HTML
     build_directory_listing_response(&response, directory_path, document_root);
