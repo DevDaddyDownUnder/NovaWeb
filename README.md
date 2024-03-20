@@ -38,6 +38,7 @@ NovaWeb -p 8081 -h 127.0.0.1 -d /var/www/sites/example
 | -h        | host              | The virtual host to route requests to the correct document root.              |
 | -d        | document root     | The document root of your files to be served.                                 |
 | --dl      | directory listing | The directory listing flag enables directory listing. Default value is false. |
+| --mp      | multi process     | The multi process flag will create a new worker for each core on the cpu.     |
 | --verbose | verbose           | The verbose flag enables detailed logging of request and response objects.    |
 
 

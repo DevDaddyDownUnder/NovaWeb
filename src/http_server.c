@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <sys/mman.h>
 #include "http_server.h"
 #include "config.h"
 #include "directory.h"
@@ -22,16 +23,13 @@
 #include "url.h"
 
 // Prevent the compiler from optimising this variable away
-volatile sig_atomic_t stop_server = 0;
+volatile sig_atomic_t *stop_server = 0;
 
 // Main logic to set up the socket and listen for new connections.
-void start_http_server(unsigned char domain, unsigned int interface, uint16_t port, int backlog)
+void start_http_server(unsigned char domain, unsigned int interface, uint16_t port, int backlog, long core_count)
 {
     int server_socket;
-    int client_socket;
     struct sockaddr_in server_addr;
-    struct sockaddr_in client_addr;
-    socklen_t client_addr_len = sizeof(client_addr);
 
     // Create server socket
     if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -67,12 +65,81 @@ void start_http_server(unsigned char domain, unsigned int interface, uint16_t po
         exit(EXIT_FAILURE);
     }
 
+    // Set server socket to non-blocking
+    if (fcntl(server_socket, F_SETFL, O_NONBLOCK) < 0)
+    {
+        perror("Error setting server socket to non-blocking");
+        exit(EXIT_FAILURE);
+    }
+
     // User feedback
     printf("NovaWeb HTTP Server listening on: %d\n\n", port);
 
     // Set up signal handlers
     signal(SIGINT, handle_termination_signal);
     signal(SIGTERM, handle_termination_signal);
+
+    // Create shared memory segment for stop_server flag
+    stop_server = mmap(NULL, sizeof(*stop_server), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    if (stop_server == MAP_FAILED)
+    {
+        perror("Error creating shared memory");
+        exit(EXIT_FAILURE);
+    }
+
+    // Create new process for each core
+    if (multi_process_flag)
+    {
+        pid_t workers[core_count];
+        for (int i = 0; i < core_count; i++)
+        {
+            pid_t pid = fork();
+
+            if (pid == -1)
+            {
+                perror("Fork failed");
+                exit(EXIT_FAILURE);
+            }
+            else if (pid == 0)
+            {
+                // Child process
+
+                // Blocking call
+                accept_connections(server_socket);
+                exit(EXIT_SUCCESS);
+            }
+            else
+            {
+                // Parent process
+                workers[i] = pid;
+            }
+        }
+
+        // Wait for child processes to terminate
+        for (int i = 0; i < core_count; i++)
+        {
+            waitpid(workers[i], NULL, 0);
+        }
+    }
+    else
+    {
+        // Blocking call
+        accept_connections(server_socket);
+    }
+
+    // Gracefully shut down the server
+    printf("Shutting down server...\n");
+
+    // Close server socket
+    close(server_socket);
+}
+
+// Accept connection loop.
+void accept_connections(int server_socket)
+{
+    int client_socket;
+    struct sockaddr_in client_addr;
+    socklen_t client_addr_len = sizeof(client_addr);
 
     // Set up timeout for select()
     struct timeval timeout;
@@ -81,7 +148,7 @@ void start_http_server(unsigned char domain, unsigned int interface, uint16_t po
     int ready;
 
     // Main server loop
-    while (!stop_server)
+    while (!*stop_server)
     {
         // Set up file descriptor set for select() with server socket
         fd_set readfds;
@@ -103,6 +170,11 @@ void start_http_server(unsigned char domain, unsigned int interface, uint16_t po
         // Accept incoming connection
         if ((client_socket = accept(server_socket, (struct sockaddr *) &client_addr, &client_addr_len)) < 0)
         {
+            if (errno == EWOULDBLOCK || errno == EAGAIN)
+            {
+                // No incoming connection, continue
+                continue;
+            }
             perror("Error accepting connection");
             continue;
         }
@@ -130,18 +202,30 @@ void start_http_server(unsigned char domain, unsigned int interface, uint16_t po
             continue;
         }
     }
-
-    // Gracefully shut down the server
-    printf("Shutting down server...\n");
-
-    // Close server socket
-    close(server_socket);
 }
 
 // Handle the processing of a request sent from a client and return a response.
 void *handle_client(void *arg)
 {
     int client_socket = *((int *) arg);
+
+    // Set client socket to non-blocking
+    int flags = fcntl(client_socket, F_GETFL, 0);
+    if (flags == -1)
+    {
+        perror("Error getting socket flags");
+        close(client_socket);
+        free(arg);
+        pthread_exit(NULL);
+    }
+    if (fcntl(client_socket, F_SETFL, flags | O_NONBLOCK) == -1)
+    {
+        perror("Error setting socket to non-blocking");
+        close(client_socket);
+        free(arg);
+        pthread_exit(NULL);
+    }
+
     char buffer[BUFFER_SIZE * 2];
     ssize_t bytes_received;
     bool keep_alive = true;
@@ -349,5 +433,5 @@ void handle_termination_signal(int signum)
     // Reset signal handler
     signal(signum, SIG_DFL);
 
-    stop_server = 1;
+    *stop_server = 1;
 }

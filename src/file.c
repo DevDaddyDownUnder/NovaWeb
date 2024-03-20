@@ -2,6 +2,8 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <errno.h>
+#include <sys/mman.h>
 #include "file.h"
 #include "config.h"
 #include "http_status.h"
@@ -115,6 +117,12 @@ bool send_file_contents(int client_socket, FILE *file_ptr)
             bytes_sent = send(client_socket, buffer + total_sent, bytes_read - (size_t)total_sent, 0);
             if (bytes_sent <= 0)
             {
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                {
+                    // Socket buffer is full, try again later
+                    continue;
+                }
+
                 perror("Error sending file contents");
                 fclose(file_ptr);
                 return false;

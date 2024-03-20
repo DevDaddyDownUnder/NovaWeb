@@ -17,11 +17,17 @@ int main(int argc, char *argv[])
     uint16_t port = DEFAULT_PORT;
     char *host = NULL;
     char *document_root = NULL;
+    long core_count = sysconf(_SC_NPROCESSORS_ONLN);
+    if (core_count < 0)
+    {
+        core_count = 1;
+    }
 
     const struct option long_options[] = {
             // Verbose option sets a flag
             {"verbose", no_argument, &verbose_flag, 1},
             {"dl", no_argument, &directory_listing_flag, 1},
+            {"mp", no_argument, &multi_process_flag, 1},
 
             // These options don't set a flag
             {"port", required_argument, NULL, 'p'},
@@ -105,7 +111,7 @@ int main(int argc, char *argv[])
     print_welcome();
 
     // Start the server entering an infinite loop
-    start_http_server(AF_INET, INADDR_ANY, port, SOCKET_BACKLOG);
+    start_http_server(AF_INET, INADDR_ANY, port, SOCKET_BACKLOG, core_count);
 
     return 0;
 }
