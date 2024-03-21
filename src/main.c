@@ -2,6 +2,7 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "http_server.h"
 #include "virtual_host.h"
 #include "config.h"
