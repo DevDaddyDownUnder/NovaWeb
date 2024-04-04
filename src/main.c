@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
             {"verbose", no_argument, &verbose_flag, 1},
             {"dl", no_argument, &directory_listing_flag, 1},
             {"mp", no_argument, &multi_process_flag, 1},
+            {"ss", no_argument, &server_signature_flag, 0},
 
             // These options don't set a flag
             {"port", required_argument, NULL, 'p'},

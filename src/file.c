@@ -56,14 +56,11 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
     snprintf(file_size_buffer, sizeof(file_size_buffer), "%ld", (long)file_size);
     add_response_header(&response, "Content-Length", file_size_buffer);
 
-    // Add Transfer-Encoding header
-//    add_response_header(&response, "Transfer-Encoding", "chunked");
-
     // Add last modified header
     char last_modified_buffer[30];
-    struct tm *tm_info;
-    tm_info = localtime(&st.st_mtime);
-    strftime(last_modified_buffer, sizeof(last_modified_buffer), "%Y-%m-%d %H:%M:%S %Z", tm_info);
+    struct tm tm_info;
+    gmtime_r(&st.st_mtime, &tm_info);
+    strftime(last_modified_buffer, sizeof(last_modified_buffer), "%Y-%m-%d %H:%M:%S %Z", &tm_info);
     add_response_header(&response, "Last-Modified", last_modified_buffer);
 
     // Add Connection header
@@ -71,8 +68,9 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
     {
         add_response_header(&response, "Connection", "Keep-Alive");
 
+        // TODO only need to create this header once
         // Add Keep-Alive header
-        char keep_alive_buffer[20];
+        char keep_alive_buffer[MAX_KEEP_ALIVE_LENGTH];
         snprintf(keep_alive_buffer, sizeof(keep_alive_buffer), "timeout=%d, max=%d", KEEP_ALIVE_TIMEOUT_SECONDS, KEEP_ALIVE_MAX_REQUESTS);
         add_response_header(&response, "Keep-Alive", keep_alive_buffer);
     }
@@ -99,7 +97,6 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
 
     // Send the file contents
     return send_file_contents(client_socket, file_ptr);
-//    return send_chunked_file_contents(client_socket, file_ptr);
 }
 
 // Read the files contents and send it to the client
@@ -133,75 +130,6 @@ bool send_file_contents(int client_socket, FILE *file_ptr)
 
     // Close file pointer
     fclose(file_ptr);
-
-    return true;
-}
-
-// Read the files contents and send it to the client
-bool send_chunked_file_contents(int client_socket, FILE *file_ptr)
-{
-    char buffer[FILE_BUFFER_SIZE];
-    size_t bytes_read;
-
-    while ((bytes_read = fread(buffer, 1, FILE_BUFFER_SIZE, file_ptr)) > 0)
-    {
-        if (send_chunk(client_socket, buffer, bytes_read) == 0)
-        {
-            fclose(file_ptr);
-            return false;
-        }
-    }
-
-    // Send zero-size chunk to indicate end of file
-    if (send(client_socket, "0\r\n\r\n", 5, 0) < 0)
-    {
-        perror("Error sending zero-size chunk");
-    }
-
-    // Close file pointer
-    fclose(file_ptr);
-
-    return true;
-}
-
-// Send a chunk of data.
-bool send_chunk(int client_socket, char *buffer, size_t size)
-{
-    char chunk_header[20];
-    ssize_t bytes_sent;
-    ssize_t total_sent = 0;
-
-    // Generate chunk header in hexadecimal format
-    sprintf(chunk_header, "%zx\r\n", size);
-
-    // Send chunk header
-    bytes_sent = send(client_socket, chunk_header, strlen(chunk_header), 0);
-    if (bytes_sent <= 0)
-    {
-        perror("Error sending chunk header");
-        return false;
-    }
-
-    // Send chunk data
-    while ((size_t)total_sent < size)
-    {
-        bytes_sent = send(client_socket, buffer + total_sent, size - (size_t)total_sent, 0);
-        if (bytes_sent <= 0)
-        {
-            perror("Error sending file contents");
-            return false;
-        }
-
-        total_sent += bytes_sent;
-    }
-
-    // Send end of chunk marker
-    bytes_sent = send(client_socket, "\r\n", 2, 0);
-    if (bytes_sent <= 0)
-    {
-        perror("Error sending chunk end marker");
-        return false;
-    }
 
     return true;
 }

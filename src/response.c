@@ -46,21 +46,30 @@ void build_http_response(http_response *response, char *output)
     // Set the status message based on the status code
     strcpy(response->status_message, get_status_message(response->status_code));
 
+    // TODO only need to create this value once per second or possibly once per handle client
     // TODO add a flag to toggle this header?
     // Add date header
     time_t current_time;
-    struct tm *tm_info;
+    struct tm tm_info;
     char date_buffer[30];
     time(&current_time);
-    tm_info = localtime(&current_time);
-    strftime(date_buffer, sizeof(date_buffer), "%Y-%m-%d %H:%M:%S %Z", tm_info);
+    gmtime_r(&current_time, &tm_info);
+    strftime(date_buffer, sizeof(date_buffer), "%Y-%m-%d %H:%M:%S %Z", &tm_info);
     add_response_header(response, "Date", date_buffer);
 
-    // TODO add a flag to toggle adding this header or not
-    // TODO define NovaWeb label and version somewhere
+    // TODO only need to create this value once
     // Add server header
-    add_response_header(response, "Server", "NovaWeb/0.1");
+    if (server_signature_flag)
+    {
+        char server_signature[12];
+        sprintf(server_signature, "%s/%s",
+                NOVAWEB_LABEL,
+                NOVAWEB_VERSION);
+        server_signature[11] = '\0';
+        add_response_header(response, "Server", server_signature);
+    }
 
+    // TODO cache status lines as these will be reused a lot
     // Build status line
     sprintf(output, "HTTP/%s %d %s\r\n",
             HTTP_VERSION,

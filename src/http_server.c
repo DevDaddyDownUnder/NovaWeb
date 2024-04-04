@@ -249,7 +249,6 @@ void *handle_client(void *arg)
         else if (activity == 0)
         {
             // Timeout occurred
-            keep_alive = false;
             break;
         }
         else
@@ -265,7 +264,6 @@ void *handle_client(void *arg)
                 }
                 else if (errno != EBADF)
                 {
-                    // Bad file descriptor is occurring with JMeter spam sometimes
                     perror("Error receiving data from client");
                 }
 
@@ -286,8 +284,7 @@ void *handle_client(void *arg)
             request_count++;
 
             // Parse request
-            http_request request;
-            memset(&request, 0, sizeof(http_request));
+            http_request request = {0}; // Initialize all members to 0
             parse_request(buffer, &request);
             if (verbose_flag)
             {
