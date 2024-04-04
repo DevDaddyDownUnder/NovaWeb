@@ -78,12 +78,3 @@ Copy the binary to the /usr/local/bin directory.
 ```bash
 make install
 ```
-
-
-## Contributing
-
-As this is a capstone project, contributions are not allowed.
-
-Once my course is complete the project will be open to contributions.
-
-
