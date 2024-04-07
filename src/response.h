@@ -13,12 +13,35 @@ typedef struct
     char body[MAX_BODY_LENGTH];
 } http_response;
 
+/**
+ * Helper function to add headers to the response object.
+ *
+ * @param response
+ * @param name
+ * @param value
+ */
 void add_response_header(http_response *response, char *name, char *value);
 
+/**
+ * Build the response string based on the response object.
+ *
+ * @param response
+ * @param output
+ */
 void build_http_response(http_response *response, char *output);
 
+/**
+ * Helper function to debug response.
+ *
+ * @param request
+ */
 void print_response(http_response request);
 
+/**
+ * Helper function to send not found.
+ *
+ * @param client_socket
+ */
 void send_not_found(int client_socket);
 
 #endif //NOVAWEB_RESPONSE_H

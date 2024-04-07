@@ -98,7 +98,7 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
     return send_file_contents(client_socket, file_ptr);
 }
 
-// Read the files contents and send it to the client
+// Read the files contents and send it to the client.
 bool send_file_contents(int client_socket, FILE *file_ptr)
 {
     char buffer[FILE_BUFFER_SIZE];

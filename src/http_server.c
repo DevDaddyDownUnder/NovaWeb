@@ -423,7 +423,7 @@ void *handle_client(void *arg)
     pthread_exit(NULL);
 }
 
-// Signal handler for termination signals
+// Signal handler for termination signals.
 void handle_termination_signal(int signum)
 {
     // Reset signal handler

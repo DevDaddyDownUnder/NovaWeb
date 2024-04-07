@@ -87,6 +87,12 @@ typedef struct
 
 extern http_status_mapping http_status_codes[MAX_STATUS_CODES];
 
+/**
+ * Get the status message for a given status code.
+ *
+ * @param status_code
+ * @return The status message associated with the status code.
+ */
 char *get_status_message(int status_code);
 
 #endif //NOVAWEB_HTTP_STATUS_H

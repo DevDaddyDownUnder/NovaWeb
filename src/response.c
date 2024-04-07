@@ -40,7 +40,7 @@ void add_response_header(http_response *response, char *name, char *value)
     response->header_count++;
 }
 
-// Build the response string based on the response object
+// Build the response string based on the response object.
 void build_http_response(http_response *response, char *output)
 {
     // Ensure a status code is set
@@ -103,7 +103,7 @@ void build_http_response(http_response *response, char *output)
     strcat(output, response->body);
 }
 
-// Helper function to debug response
+// Helper function to debug response.
 void print_response(http_response response)
 {
     // Print status line

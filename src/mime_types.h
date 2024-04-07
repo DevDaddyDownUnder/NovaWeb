@@ -16,6 +16,12 @@ typedef struct
 
 extern mime_mapping mime_types[MAX_MIME_TYPES];
 
+/**
+ * Get the mime type based on the file extension, fallback is text/plain.
+ *
+ * @param filename
+ * @return The mime type based on the file extension, fallback is text/plain.
+ */
 char *get_mime_type(char *filename);
 
 #endif //HTTPSERVER_MIME_TYPES_H
