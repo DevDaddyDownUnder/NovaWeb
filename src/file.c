@@ -33,8 +33,7 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
     }
 
     // Get file size
-    struct stat st;
-    memset(&st, 0, sizeof(struct stat));
+    struct stat st = {0};
     if (stat(file_path, &st) != 0)
     {
         send_not_found(client_socket);
@@ -42,8 +41,7 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
     }
 
     // Build response
-    http_response response;
-    memset(&response, 0, sizeof(http_response));
+    http_response response = {0};
     response.status_code = OK;
 
     // Get mime type of the file
@@ -53,7 +51,7 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
     // Add content length header
     off_t file_size = st.st_size;
     char file_size_buffer[MAX_HEADER_VALUE_LENGTH];
-    snprintf(file_size_buffer, sizeof(file_size_buffer), "%ld", (long)file_size);
+    snprintf(file_size_buffer, sizeof(file_size_buffer), "%ld", (long) file_size);
     add_response_header(&response, "Content-Length", file_size_buffer);
 
     // Add last modified header
@@ -71,7 +69,8 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
         // TODO only need to create this header once
         // Add Keep-Alive header
         char keep_alive_buffer[MAX_KEEP_ALIVE_LENGTH];
-        snprintf(keep_alive_buffer, sizeof(keep_alive_buffer), "timeout=%d, max=%d", KEEP_ALIVE_TIMEOUT_SECONDS, KEEP_ALIVE_MAX_REQUESTS);
+        snprintf(keep_alive_buffer, sizeof(keep_alive_buffer), "timeout=%d, max=%d", KEEP_ALIVE_TIMEOUT_SECONDS,
+                 KEEP_ALIVE_MAX_REQUESTS);
         add_response_header(&response, "Keep-Alive", keep_alive_buffer);
     }
     else
@@ -89,7 +88,7 @@ bool send_file(int client_socket, char *file_path, bool keep_alive)
     // Send the response
     size_t response_length = strlen(output);
     ssize_t bytes_sent = send(client_socket, output, response_length, 0);
-    if (bytes_sent < (ssize_t)response_length)
+    if (bytes_sent < (ssize_t) response_length)
     {
         perror("Error sending response headers");
         return false;
@@ -109,9 +108,9 @@ bool send_file_contents(int client_socket, FILE *file_ptr)
     while ((bytes_read = fread(buffer, 1, FILE_BUFFER_SIZE, file_ptr)) > 0)
     {
         ssize_t total_sent = 0;
-        while (total_sent < (ssize_t)bytes_read)
+        while (total_sent < (ssize_t) bytes_read)
         {
-            bytes_sent = send(client_socket, buffer + total_sent, bytes_read - (size_t)total_sent, 0);
+            bytes_sent = send(client_socket, buffer + total_sent, bytes_read - (size_t) total_sent, 0);
             if (bytes_sent <= 0)
             {
                 if (errno == EAGAIN || errno == EWOULDBLOCK)

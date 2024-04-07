@@ -4,7 +4,8 @@
 #define MAX_STATUS_MESSAGE_LENGTH 100
 #define MAX_STATUS_CODES 80
 
-typedef enum {
+typedef enum
+{
     // Information responses
     CONTINUE = 100,
     SWITCHING_PROTOCOLS = 101,
@@ -78,7 +79,8 @@ typedef enum {
     NETWORK_AUTHENTICATION_REQUIRED = 511,
 } http_status;
 
-typedef struct {
+typedef struct
+{
     int code;
     char message[MAX_STATUS_MESSAGE_LENGTH];
 } http_status_mapping;

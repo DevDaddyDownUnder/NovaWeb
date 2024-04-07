@@ -53,11 +53,11 @@ int main(int argc, char *argv[])
                 break;
             case 'p':
             {
-                char *endptr;
-                long port_long = strtol(optarg, &endptr, 10);
+                char *end_ptr;
+                long port_long = strtol(optarg, &end_ptr, 10);
 
                 // Check the port is in bounds
-                if (endptr == optarg || *endptr != '\0' || port_long < 0 || port_long > 65535)
+                if (end_ptr == optarg || *end_ptr != '\0' || port_long < 0 || port_long > 65535)
                 {
                     fprintf(stderr, "Invalid port: %s\n", optarg);
                     return 1;
@@ -78,7 +78,8 @@ int main(int argc, char *argv[])
                 if (optopt == 'p')
                 {
                     fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-                } else
+                }
+                else
                 {
                     fprintf(stderr, "Unknown option -%c.\n", optopt);
                 }

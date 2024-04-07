@@ -355,8 +355,7 @@ void *handle_client(void *arg)
                 strncpy(default_file + strlen(default_file), DEFAULT_FILE, strlen(DEFAULT_FILE) + 1);
 
                 // Check if the default file exists
-                struct stat st;
-                memset(&st, 0, sizeof(struct stat));
+                struct stat st = {0};
                 if (stat(default_file, &st) == 0)
                 {
                     // Copy the concatenated path back to file_path
@@ -390,8 +389,7 @@ void *handle_client(void *arg)
             }
 
             // Check if the requested file is a directory
-            struct stat st;
-            memset(&st, 0, sizeof(struct stat));
+            struct stat st = {0};
             stat(file_path, &st);
 
             // Send directory list or file

@@ -31,9 +31,9 @@ void parse_request(char *buffer, http_request *request)
             if (strcmp(header_name, "Content-Length") == 0)
             {
                 // Convert the header value to an integer
-                char *endptr;
-                long length = strtol(header_value, &endptr, 10);
-                if (errno == ERANGE || *endptr != '\0' || length < 0)
+                char *end_ptr;
+                long length = strtol(header_value, &end_ptr, 10);
+                if (errno == ERANGE || *end_ptr != '\0' || length < 0)
                 {
                     perror("Error converting Content-Length to integer");
                 }
@@ -83,7 +83,7 @@ void add_request_header(http_request *request, char *name, char *value)
 }
 
 // Function to find a header by name
-char* get_header_value(http_request *request, char *header_name)
+char *get_header_value(http_request *request, char *header_name)
 {
     for (int i = 0; i < request->header_count; i++)
     {

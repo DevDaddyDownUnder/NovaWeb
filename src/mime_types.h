@@ -8,7 +8,8 @@
 #define MAX_EXTENSION_LENGTH 10
 #define MAX_MIME_TYPE_LENGTH 100
 
-typedef struct {
+typedef struct
+{
     char extension[MAX_EXTENSION_LENGTH];
     char mime_type[MAX_MIME_TYPE_LENGTH];
 } mime_mapping;

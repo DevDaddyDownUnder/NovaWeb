@@ -3,7 +3,8 @@
 
 #include "header.h"
 
-typedef struct {
+typedef struct
+{
     char method[MAX_METHOD_LENGTH];
     char uri[MAX_URI_LENGTH];
     char version[MAX_VERSION_LENGTH];
@@ -14,8 +15,11 @@ typedef struct {
 } http_request;
 
 void parse_request(char *buffer, http_request *request);
+
 void add_request_header(http_request *request, char *name, char *value);
-char* get_header_value(http_request *request, char *header_name);
+
+char *get_header_value(http_request *request, char *header_name);
+
 void print_request(http_request request);
 
 #endif //NOVAWEB_REQUEST_H

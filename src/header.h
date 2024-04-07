@@ -14,7 +14,8 @@
 #define KEEP_ALIVE_MAX_REQUESTS 100
 #define MAX_KEEP_ALIVE_LENGTH 30
 
-typedef struct {
+typedef struct
+{
     char name[MAX_HEADER_NAME_LENGTH];
     char value[MAX_HEADER_VALUE_LENGTH];
 } http_header;
