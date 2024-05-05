@@ -2,6 +2,7 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "http_server.h"
 #include "virtual_host.h"
 #include "config.h"
@@ -17,11 +18,18 @@ int main(int argc, char *argv[])
     uint16_t port = DEFAULT_PORT;
     char *host = NULL;
     char *document_root = NULL;
+    long core_count = sysconf(_SC_NPROCESSORS_ONLN);
+    if (core_count < 0)
+    {
+        core_count = 1;
+    }
 
     const struct option long_options[] = {
             // Verbose option sets a flag
             {"verbose", no_argument, &verbose_flag, 1},
             {"dl", no_argument, &directory_listing_flag, 1},
+            {"mp", no_argument, &multi_process_flag, 1},
+            {"ss", no_argument, &server_signature_flag, 0},
 
             // These options don't set a flag
             {"port", required_argument, NULL, 'p'},
@@ -45,11 +53,11 @@ int main(int argc, char *argv[])
                 break;
             case 'p':
             {
-                char *endptr;
-                long port_long = strtol(optarg, &endptr, 10);
+                char *end_ptr;
+                long port_long = strtol(optarg, &end_ptr, 10);
 
                 // Check the port is in bounds
-                if (endptr == optarg || *endptr != '\0' || port_long < 0 || port_long > 65535)
+                if (end_ptr == optarg || *end_ptr != '\0' || port_long < 0 || port_long > 65535)
                 {
                     fprintf(stderr, "Invalid port: %s\n", optarg);
                     return 1;
@@ -70,7 +78,8 @@ int main(int argc, char *argv[])
                 if (optopt == 'p')
                 {
                     fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-                } else
+                }
+                else
                 {
                     fprintf(stderr, "Unknown option -%c.\n", optopt);
                 }
@@ -105,7 +114,7 @@ int main(int argc, char *argv[])
     print_welcome();
 
     // Start the server entering an infinite loop
-    start_http_server(AF_INET, INADDR_ANY, port, SOCKET_BACKLOG);
+    start_http_server(AF_INET, INADDR_ANY, port, SOCKET_BACKLOG, core_count);
 
     return 0;
 }

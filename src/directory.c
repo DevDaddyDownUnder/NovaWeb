@@ -9,16 +9,36 @@
 #include "response.h"
 
 // Send a list of files and directories in the specified path to the client.
-bool send_directory_listing(int client_socket, char *directory_path, char *document_root)
+bool send_directory_listing(int client_socket, char *directory_path, char *document_root, bool keep_alive)
 {
     // Build response
-    http_response response;
-    memset(&response, 0, sizeof(http_response));
+    http_response response = {0};
     response.status_code = OK;
     add_response_header(&response, "Content-Type", "text/html");
 
+    // Add Connection header
+    if (keep_alive)
+    {
+        add_response_header(&response, "Connection", "Keep-Alive");
+
+        // Add Keep-Alive header
+        char keep_alive_buffer[MAX_HEADER_VALUE_LENGTH];
+        snprintf(keep_alive_buffer, sizeof(keep_alive_buffer), "timeout=%d, max=%d", KEEP_ALIVE_TIMEOUT_SECONDS,
+                 KEEP_ALIVE_MAX_REQUESTS);
+        add_response_header(&response, "Keep-Alive", keep_alive_buffer);
+    }
+    else
+    {
+        add_response_header(&response, "Connection", "close");
+    }
+
     // Build directory listing HTML
     build_directory_listing_response(&response, directory_path, document_root);
+
+    // Add content length header
+    char file_size_buffer[MAX_HEADER_VALUE_LENGTH];
+    snprintf(file_size_buffer, sizeof(file_size_buffer), "%ld", strlen(response.body));
+    add_response_header(&response, "Content-Length", file_size_buffer);
 
     // Build HTTP response
     char output[MAX_RESPONSE_LENGTH];
@@ -31,7 +51,7 @@ bool send_directory_listing(int client_socket, char *directory_path, char *docum
     // Send the response
     size_t response_length = strlen(output);
     ssize_t bytes_sent = send(client_socket, output, response_length, 0);
-    if (bytes_sent < (ssize_t)response_length)
+    if (bytes_sent < (ssize_t) response_length)
     {
         perror("Error sending response headers");
         return false;
@@ -92,8 +112,7 @@ void build_directory_listing_response(http_response *response, char *directory_p
         // Build absolute file path
         char file_path[FILE_BUFFER_SIZE];
         snprintf(file_path, FILE_BUFFER_SIZE, "%s/%s", directory_path, entry->d_name);
-        struct stat st;
-        memset(&st, 0, sizeof(struct stat));
+        struct stat st = {0};
 
         if (stat(file_path, &st) != 0)
         {
@@ -128,7 +147,7 @@ void build_directory_listing_response(http_response *response, char *directory_p
                      entry->d_name,
                      entry->d_name,
                      last_modified,
-                     (long)file_size);
+                     (long) file_size);
         }
 
         strcat(response->body, listing_buffer);

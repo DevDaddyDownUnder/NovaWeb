@@ -32,13 +32,15 @@ NovaWeb -p 8081 -h 127.0.0.1 -d /var/www/sites/example
 
 ### Options
 
-| Argument  | Name              | Description                                                                   |
-|-----------|:------------------|:------------------------------------------------------------------------------|
-| -p        | port              | The port number to bind to. Default value is 8080.                            |
-| -h        | host              | The virtual host to route requests to the correct document root.              |
-| -d        | document root     | The document root of your files to be served.                                 |
-| --dl      | directory listing | The directory listing flag enables directory listing. Default value is false. |
-| --verbose | verbose           | The verbose flag enables detailed logging of request and response objects.    |
+| Argument  | Name              | Description                                                                            |
+|-----------|:------------------|:---------------------------------------------------------------------------------------|
+| -p        | port              | The port number to bind to. Default value is 8080.                                     |
+| -h        | host              | The virtual host to route requests to the correct document root.                       |
+| -d        | document root     | The document root of your files to be served.                                          |
+| --dl      | directory listing | The directory listing flag enables directory listing. Default value is false.          |
+| --mp      | multi process     | The multi process flag will create a new worker for each core on the cpu.              |
+| --ss      | server signature  | The server signature flag disables the server signature header. Default value is true. |
+| --verbose | verbose           | The verbose flag enables detailed logging of request and response objects.             |
 
 
 ## Compiling
@@ -76,12 +78,3 @@ Copy the binary to the /usr/local/bin directory.
 ```bash
 make install
 ```
-
-
-## Contributing
-
-As this is a capstone project, contributions are not allowed.
-
-Once my course is complete the project will be open to contributions.
-
-

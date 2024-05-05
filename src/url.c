@@ -24,7 +24,7 @@ void url_decode(const char *encoded, char *decoded, size_t max_length)
 
                 if (hex_value != ULONG_MAX)
                 {
-                    decoded[decoded_index++] = (char)hex_value;
+                    decoded[decoded_index++] = (char) hex_value;
                     // Move past the percent-encoded characters
                     encoded_index += 2;
                 }

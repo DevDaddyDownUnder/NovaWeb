@@ -40,17 +40,45 @@ void add_response_header(http_response *response, char *name, char *value)
     response->header_count++;
 }
 
-// Build the response string based on the response object
+// Build the response string based on the response object.
 void build_http_response(http_response *response, char *output)
 {
+    // Ensure a status code is set
+    if (response->status_code == 0)
+    {
+        response->status_code = OK;
+    }
+
     // Set the status message based on the status code
-    strcpy(response->status_message, get_status_message(response->status_code));
+    if (strlen(response->status_message) == 0)
+    {
+        strcpy(response->status_message, get_status_message(response->status_code));
+    }
 
-    // TODO add a flag to toggle adding this header or not
-    // TODO define NovaWeb label and version somewhere
+    // TODO only need to create this value once per second or possibly once per handle client
+    // TODO add a flag to toggle this header?
+    // Add date header
+    time_t current_time;
+    struct tm tm_info;
+    char date_buffer[30];
+    time(&current_time);
+    gmtime_r(&current_time, &tm_info);
+    strftime(date_buffer, sizeof(date_buffer), "%Y-%m-%d %H:%M:%S %Z", &tm_info);
+    add_response_header(response, "Date", date_buffer);
+
+    // TODO only need to create this value once
     // Add server header
-    add_response_header(response, "Server", "NovaWeb/0.1");
+    if (server_signature_flag)
+    {
+        char server_signature[12];
+        sprintf(server_signature, "%s/%s",
+                NOVAWEB_LABEL,
+                NOVAWEB_VERSION);
+        server_signature[11] = '\0';
+        add_response_header(response, "Server", server_signature);
+    }
 
+    // TODO cache status lines as these will be reused a lot
     // Build status line
     sprintf(output, "HTTP/%s %d %s\r\n",
             HTTP_VERSION,
@@ -75,14 +103,14 @@ void build_http_response(http_response *response, char *output)
     strcat(output, response->body);
 }
 
-// Helper function to debug response
+// Helper function to debug response.
 void print_response(http_response response)
 {
     // Print status line
     printf("HTTP/%s %d %s\n",
-            HTTP_VERSION,
-            response.status_code,
-            response.status_message);
+           HTTP_VERSION,
+           response.status_code,
+           response.status_message);
 
     // Print headers
     for (int i = 0; i < response.header_count; i++)
@@ -99,10 +127,10 @@ void print_response(http_response response)
 // Helper function to send not found.
 void send_not_found(int client_socket)
 {
-    http_response response;
-    memset(&response, 0, sizeof(http_response));
+    http_response response = {0};
     response.status_code = NOT_FOUND;
     add_response_header(&response, "Content-Type", "text/html");
+    add_response_header(&response, "Content-Length", "108");
 
     strncpy(response.body, "<!DOCTYPE html>"
                            "<html>"
@@ -122,7 +150,7 @@ void send_not_found(int client_socket)
     // Send the response
     size_t response_length = strlen(output);
     ssize_t bytes_sent = send(client_socket, output, response_length, 0);
-    if (bytes_sent < (ssize_t)response_length)
+    if (bytes_sent < (ssize_t) response_length)
     {
         perror("Error sending response headers");
         close(client_socket);

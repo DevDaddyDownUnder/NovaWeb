@@ -77,7 +77,7 @@ http_status_mapping http_status_codes[MAX_STATUS_CODES] = {
         {NETWORK_AUTHENTICATION_REQUIRED, "Network Authentication Required"}
 };
 
-// Get the status message for a given status code
+// Get the status message for a given status code.
 char *get_status_message(int status_code)
 {
     for (size_t i = 0; i < sizeof(http_status_codes) / sizeof(http_status_codes[0]); i++)

@@ -16,7 +16,7 @@ char *ltrim(char *string)
 // Remove space from right of string.
 char *rtrim(char *string)
 {
-    char *end = string + strlen(string) -1;
+    char *end = string + strlen(string) - 1;
 
     while (end > string && isspace(*end))
     {
